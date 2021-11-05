@@ -1,0 +1,51 @@
+﻿@page "/doacao/consulta/{id}"
+@using Operacao.Shared.Models
+
+<h3>Consulta Doações</h3>
+<hr />
+
+<table>
+    <thead>
+        <tr>
+            <th>Matrícula</th>
+            <th>Recibo</th>
+            <th>Valor</th>
+            <th>Vencimento</th>
+            <th></th>
+        </tr>
+    </thead>
+    <tbody>
+        @foreach (Parcela parcela in parcelas)
+        {
+            <tr>
+                <td>@parcela.ContribuinteId</td>
+                <td>@parcela.Id</td>
+                <td>@parcela.Valor.ToString("C2")</td>
+                <td>@parcela.DtVencimento.ToShortDateString()</td>
+                <td><button class="btn btn-primary" @onclick="@ExibirModal">Editar</button></td>
+            </tr>
+        }
+    </tbody>
+</table>
+
+@if (modal == true)
+{
+
+}
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    List<Parcela> parcelas = new List<Parcela>();
+    Parcela parcela = new Parcela();
+    bool modal = false;
+
+    void ExibirModal()
+    {
+        modal = !modal;
+    }
+
+
+
+}

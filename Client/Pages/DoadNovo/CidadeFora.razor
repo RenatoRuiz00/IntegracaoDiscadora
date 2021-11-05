@@ -1,0 +1,85 @@
+﻿@page "/doadNovo/cidadefora/{id}"
+@using Operacao.Shared.Models
+@using Operacao.Shared.Utils
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<h3>Cidade de Fora</h3>
+
+<a href="javascript:history.back()">Voltar</a>
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <div class="alert alert-warning" role="alert">
+        @message
+    </div>
+}
+
+<div class="card" style="width: 400px;">
+    <div class="card-body">
+        <form method="post" @onsubmit="@Submit">
+            <input type="hidden" name="id" @bind="@Id" />
+            <div class="form-row">
+                <div class="col d-lg-flex align-items-lg-center">
+                    <label style="margin-right: 10px;">Cidade</label>
+                    <input type="text" class="form-control" required maxlength="50" name="cidade" @bind-value="@cidade" />
+                </div>
+            </div>
+            <div class="form-row" style="margin-top: 10px;">
+                <div class="col">
+                    <button class="btn btn-primary float-right" type="submit">Salvar</button>
+                </div>
+            </div>
+        </form>
+    </div>
+</div>
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    private string message;
+    private string cidade;
+    private Funcionario usuario;
+    private DoadNovo doadNovo;
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/" + Id);
+    }
+
+
+    private async Task Submit()
+    {
+        message = "";
+        if (string.IsNullOrEmpty(cidade))
+        {
+            message = "Digite a cidade!";
+            return;
+        }
+
+        doadNovo.Cidade = cidade;
+        await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/desativar/" + doadNovo.Id, doadNovo);
+        await Http.DeleteAsync("api/doadnovo/" + doadNovo.Id);
+        await InserirAcao();
+        NavManager.NavigateTo("/doadNovo/index/");
+    }
+
+    private async Task InserirAcao()
+    {
+        AcaoDoadNovo acao = new AcaoDoadNovo
+        {
+            PessoaId = Convert.ToInt32(Id),
+            Telefone = doadNovo.Telefone,
+            Descricao = "Cidade de fora",
+            Dt = Converter.TimeZone(DateTime.UtcNow),
+            FuncionarioId = usuario.Id
+        };
+
+        await Http.PostAsJsonAsync<AcaoDoadNovo>("api/AcaoDoadNovo", acao);
+    }
+
+}

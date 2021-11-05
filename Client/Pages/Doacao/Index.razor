@@ -1,0 +1,195 @@
+﻿@page "/doacao/index/{id}"
+@using Operacao.Shared.Models
+@using Operacao.Shared.Utils
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+
+<h3>Lançar Doação</h3>
+<hr />
+
+<form>
+    <input type="hidden" @bind="Id" name="id" />
+    <div class="form-row" @onsubmit="Submit">
+        <div class="col">
+            <label>Data 1 Doação</label>
+            <input class="form-control" type="date" min="@Converter.TimeZone(DateTime.UtcNow).ToString("yyyy-MM-dd")" @bind-value="@parcela.DtVencimento" required name="dtDoacao" />
+        </div>
+
+        <div class="col">
+            <label>Valor</label>
+            <input class="form-control" type="text" required name="valor" @bind-value="@parcela.Valor" />
+        </div>
+        <div class="col">
+            <label>Categoria</label>
+            <select class="form-control" required name="categoria" @bind="@categoria">
+                @foreach (Categoria categoria in categorias)
+                {
+                    <option>@categoria.Descricao</option>
+                }
+            </select>
+        </div>
+        <div class="col">
+            <label>Qtd. Doações</label>
+            <input class="form-control" type="number" min="1" max="24" required name="qtdDoacoes" @bind-value="@qtdDoacoes" />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col">
+            <label>Data Retorno</label>
+            <input class="form-control" type="date" name="dtRetorno" @bind-value="@dtRetorno" />
+        </div>
+        <div class="col">
+            <label>Qtd. Cupons</label>
+            <input class="form-control" type="number" min="0" name="qtdCupons" @bind-value="@parcela.QtdCupons" />
+        </div>
+        <div class="col" style="margin-top:30px;">
+            <button type="submit" class="btn btn-success" @onclick="@Submit">Lançar Doações</button>
+        </div>
+    </div>
+</form>
+
+@message
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    private Funcionario usuario;
+    private Parcela parcela = new Parcela();
+    private List<Categoria> categorias = new List<Categoria>();
+    private string categoria = "A-Especial";
+    private DateTime? dtRetorno;
+    private int qtdDoacoes = 1;
+    private int matricula;
+    private DoadNovo doadNovo;
+
+    string message = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+
+        if (usuario == null || usuario.Id == 0)
+        {
+            NavManager.NavigateTo("/");
+        }
+
+        parcela.DtVencimento = Converter.TimeZone(DateTime.UtcNow);
+        categorias = await Http.GetFromJsonAsync<List<Categoria>>("api/categoria/");
+        doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/buscarporid2/" + Id);
+    }
+
+    private async Task Submit()
+    {
+        await InserirCliente();
+        await DeletarDoadNovo();
+        await InserirAcaoDoadNovo();
+        await GerarParcelas();
+    }
+
+    private async Task InserirAcaoDoadNovo()
+    {
+        AcaoDoadNovo acaoDoadNovo = new AcaoDoadNovo
+        {
+            PessoaId = Convert.ToInt32(Id),
+            Telefone = "",
+            Descricao = "Contribuiu",
+            Dt = Converter.TimeZone(DateTime.UtcNow),
+            FuncionarioId = usuario.Id
+        };
+
+        await Http.PostAsJsonAsync<AcaoDoadNovo>("api/AcaoDoadNovo", acaoDoadNovo);
+    }
+
+    private async Task InserirCliente()
+    {
+        Contribuinte contribuinte = new Contribuinte
+        {
+            Nome = doadNovo.Nome,
+            DtNascimento = doadNovo.DtNascimento,
+            Numero = doadNovo.Numero,
+            Telefone = doadNovo.Telefone,
+            ObsOperacao = doadNovo.ObsOperacao,
+            ObsMensageiros = doadNovo.ObsMensageiros,
+            ObsCoordenacao = doadNovo.ObsCoordenacao,
+            Sexo = doadNovo.Sexo,
+            Complemento = doadNovo.Complemento,
+            PontoReferencia = doadNovo.PontoReferencia,
+            DtRetorno = Converter.TimeZone(DateTime.UtcNow),
+            Email = doadNovo.Email,
+            Na = 0,
+            Celular1 = doadNovo.Celular1,
+            Celular2 = doadNovo.Celular2,
+            DtCadastramento = Converter.TimeZone(DateTime.UtcNow),
+            Endereco = doadNovo.Endereco,
+            Bairro = doadNovo.Bairro,
+            Cidade = doadNovo.Cidade,
+            Categoria = categoria,
+            Cpf = doadNovo.Cpf,
+            Origem = doadNovo.Origem,
+            FuncionarioId = usuario.Id
+        };
+
+        await Http.PostAsJsonAsync<Contribuinte>("api/contribuinte", contribuinte);
+        matricula = await Http.GetFromJsonAsync<int>("api/contribuinte/buscarUltimoId/");
+    }
+
+    private async Task DeletarDoadNovo()
+    {
+        //await Http.PutAsJsonAsync<DoadNovo>("api/doadNovo/desativar/" + doadNovo.Id, doadNovo);
+        await Http.DeleteAsync("api/doadNovo/" + Id);
+    }
+
+
+    private async Task GerarParcelas()
+    {
+        int idContrato = await Http.GetFromJsonAsync<int>("api/contrato/buscarUltimoId") + 1;
+
+        Contrato contrato = new Contrato
+        {
+            Id = idContrato,
+            BytMeses = 1,
+            BytParcelas = qtdDoacoes,
+            ContribuinteId = matricula,
+            DtContrato = Converter.TimeZone(DateTime.UtcNow),
+            DtLigacao = Converter.TimeZone(DateTime.UtcNow),
+            Valor = parcela.Valor,
+            FuncionarioId = usuario.Id
+        };
+
+        await Http.PostAsJsonAsync<Contrato>("api/contrato/", contrato);
+
+        for (int i = 0; i <= qtdDoacoes; i++)
+        {
+            Parcela parcela2 = new Parcela
+            {
+                ContribuinteId = matricula,
+                BytParcela = i + 1,
+                DtVencimento = parcela.DtVencimento.AddMonths(i),
+                Valor = parcela.Valor,
+                FuncionarioId = usuario.Id,
+                ContratoId = idContrato,
+                QtdCupons = parcela.QtdCupons,
+                Boleto = null,
+                Impresso = false,
+                DtImpressao = null
+            };
+            await Http.PostAsJsonAsync<Parcela>("api/parcela", parcela2);
+        }
+
+        DateTime dtRetorno2 = parcela.DtVencimento.AddMonths(qtdDoacoes);
+
+        if (dtRetorno.HasValue)
+        {
+            dtRetorno2 = dtRetorno.Value;
+        }
+
+        await Http.GetAsync("api/contribuinte/atualizaRetorno/" + matricula + "/" + dtRetorno2.ToString("yyyy-MM-dd HH:mm"));
+
+        await Http.PostAsJsonAsync<Parcela>("api/doadnovo/inserirResultado/", parcela);
+    }
+
+
+
+}

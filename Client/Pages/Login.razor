@@ -1,0 +1,151 @@
+﻿@page "/"
+@using Operacao.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@layout EmptyLayout
+
+<style>
+    body {
+        color: #4e4e4e;
+        background: #e2e2e2;
+        font-family: 'Roboto', sans-serif;
+    }
+
+    .form-control {
+        font-size: 16px;
+        background: #f2f2f2;
+        box-shadow: none !important;
+        border-color: transparent;
+    }
+
+        .form-control:focus {
+            border-color: #d3d3d3;
+        }
+
+    .form-control, .btn {
+        border-radius: 2px;
+    }
+
+    .login-form {
+        width: 380px;
+        margin: 0 auto;
+    }
+
+        .login-form h2 {
+            margin: 0;
+            padding: 30px 0;
+            font-size: 34px;
+        }
+
+        .login-form .avatar {
+            margin: 0 auto 30px;
+            width: 100px;
+            height: 100px;
+            border-radius: 50%;
+            z-index: 9;
+            background: #ef3b3a;
+            padding: 15px;
+            box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.1);
+        }
+
+            .login-form .avatar img {
+                width: 100%;
+            }
+
+        .login-form form {
+            color: #7a7a7a;
+            border-radius: 4px;
+            margin-bottom: 15px;
+            background: #fff;
+            box-shadow: 0px 2px 2px rgba(0, 0, 0, 0.3);
+            padding: 30px;
+        }
+
+        .login-form .btn {
+            font-weight: bold;
+            background: #ef3b3a;
+            border: none;
+            margin-bottom: 20px;
+        }
+
+            .login-form .btn:hover, .login-form .btn:focus {
+                background: #ed2121;
+                outline: none !important;
+            }
+
+        .login-form a {
+            color: #ef3b3a;
+        }
+
+        .login-form form a {
+            color: #ef3b3a;
+        }
+
+            .login-form a:hover, .login-form form a:hover {
+                text-decoration: underline;
+            }
+
+    .hint-text {
+        color: #999;
+        text-align: center;
+    }
+
+    .form-footer {
+        padding-bottom: 15px;
+        text-align: center;
+    }
+
+    #mensagem {
+        color: #ef3b3a;
+    }
+</style>
+
+<div class="login-form">
+    <h2 class="text-center">Login</h2>
+    <form method="post" @onsubmit="@Submit">
+        <div class="avatar">
+            <img src="~/imgs/avatar.png" alt="Avatar">
+        </div>
+        <div class="form-group">
+            <input type="text" class="form-control input-lg" placeholder="Usuário" required="required" name="usuario" @bind-value="@usuario">
+        </div>
+        <div class="form-group">
+            <input type="password" class="form-control input-lg" placeholder="Senha" required="required" name="senha" @bind-value="@senha">
+        </div>
+        <div class="form-group">
+            <input type="submit" value="Entrar" class="btn btn-primary btn-lg btn-block login-btn" />
+        </div>
+
+        @if (!string.IsNullOrEmpty(message))
+        {
+            <p class="alert alert-danger">@message</p>
+        }
+    </form>
+</div>
+
+@code{
+
+    private string usuario;
+    private string senha;
+    private string message;
+
+    private Funcionario funcionario;
+
+    private async Task Submit()
+    {
+        funcionario = await Http.GetFromJsonAsync<Funcionario>("api/funcionario/login/" + usuario + "/" + senha);
+
+        if (funcionario != null && funcionario.Id != 0)
+        {
+            sessionStorage.SetItem<Funcionario>("usuario", funcionario);
+            NavManager.NavigateTo("/index");
+        }
+        else
+        {
+            message = "O login Falhou. Informe as credenciais corretas";
+        }
+    }
+}
+
+

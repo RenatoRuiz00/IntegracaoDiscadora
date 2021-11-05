@@ -1,0 +1,174 @@
+﻿@page "/doadNovo/index"
+@page "/doadNovo/index/{id}"
+@using Operacao.Shared.Models;
+@using Operacao.Shared.Utils;
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+
+<h3>Doad. Novo</h3>
+<hr />
+
+@if (!string.IsNullOrEmpty(message))
+{
+    <span style="color:red;">@message</span>
+}
+else
+{
+
+    <form method="post" @onsubmit="@Submit" autocomplete="off">
+        <input type="hidden" name="id" @bind="@doadNovo.Id" />
+        <div class="form-row">
+            <div class="col">
+                <label>Telefone</label>
+                <input type="text" class="form-control" readonly @bind-value="@doadNovo.Telefone" />
+            </div>
+            <div class="col">
+                <label>Retorno</label>
+                <input type="text" class="form-control" readonly @bind-value="@doadNovo.DtRetorno" />
+            </div>
+            <div class="col">
+                <label>Ação</label>
+                <select class="form-control" name="acao" @bind="@acao">
+                    <option>Contribuiu</option>
+                    <option>Boleto</option>
+                    <option>Já  contribui</option>
+                    <option>Não contribuiu (NC)</option>
+                    <option>Não Atendeu (NA)</option>
+                    <option>Agendar Retorno</option>
+                    <option>Não existe</option>
+                    <option>Não Ligar mais</option>
+                    <option>Número desativado</option>
+                    <option>Ocupado</option>
+                    <option>Enviar a Coordenadora</option>
+                    <option>Cidade de fora</option>
+                </select>
+            </div>
+            <div class="col"><button type="submit" class="btn btn-success" style="margin-top:30px;">Salvar</button></div>
+        </div>
+        <div class="form-row">
+            <div class="col">
+                <label>Bairro</label>
+                <input type="text" class="form-control" name="bairro" @bind-value="@doadNovo.Bairro" />
+            </div>
+            <div class="col">
+                <label>Cidade</label>
+                <input type="text" class="form-control" name="cidade" @bind-value="@doadNovo.Cidade" />
+            </div>
+            <div class="col">
+                <label>Celular 1</label>
+                <input type="text" class="form-control" name="celular1" @bind-value="@doadNovo.Celular1" />
+            </div>
+            <div class="col">
+                <label>Celular 2</label>
+                <input type="text" class="form-control" name="celular2" @bind-value="@doadNovo.Telefone" />
+            </div>
+        </div>
+        <div class="form-row">
+            <div class="col"><label>Obs. Coordenação</label><textarea class="form-control" rows="2" name="obsCoord" @bind="@doadNovo.ObsCoordenacao"></textarea></div>
+            <div class="col"><label>Obs. Operação</label><textarea class="form-control" rows="2" name="obsOper" @bind="@doadNovo.ObsOperacao"></textarea></div>
+        </div>
+    </form>
+}
+
+
+
+
+@code {
+
+    [Parameter]
+    public string Id { get; set; }
+
+    private Funcionario usuario;
+    private DoadNovo doadNovo = new DoadNovo();
+    private string message;
+    private string acao = "";
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+
+        if (string.IsNullOrEmpty(Id))
+        {
+            message = "Não há código para consulta";
+        }
+
+        else
+        {
+            doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/" + Id);
+            if (doadNovo.Id == 0)
+            {
+                message = "Não há telefone com esse código";
+            }
+        }
+    }
+
+    private async Task Submit()
+    {
+        if (string.IsNullOrEmpty(acao))
+        {
+            message = "Selecione a ação";
+        }
+
+        await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/update1/" + Id, doadNovo);
+
+
+        switch (acao)
+        {
+            case "Agendar Retorno":
+                NavManager.NavigateTo("/doadNovo/agenda/" + Id + "/" + doadNovo.Telefone);
+                break;
+
+            case "Contribuiu":
+                NavManager.NavigateTo("/doadNovo/contribuiu/" + Id);
+                break;
+
+            case "Cidade de fora":
+                NavManager.NavigateTo("/doadNovo/cidadefora/" + Id);
+                break;
+
+            case "Enviar a Coordenadora":
+                doadNovo.DtRetorno = Converter.TimeZone(DateTime.UtcNow).AddYears(5);
+                doadNovo.UltimaAcao = acao;
+                doadNovo.FuncionarioId = 1;
+
+                await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/update2/" + Id, doadNovo);
+                await InserirAcao("Enviou para Coordenadora");
+
+                NavManager.NavigateTo("/doadNovo/index/");
+                break;
+
+            default:
+
+                int seg = await Http.GetFromJsonAsync<int>("api/criteriodoadnovo/" + acao);
+                DateTime dtRetorno = Converter.TimeZone(DateTime.UtcNow).AddMinutes(seg);
+
+                doadNovo.DtRetorno = dtRetorno;
+                doadNovo.UltimaAcao = acao;
+                doadNovo.FuncionarioId = 0;
+
+                await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/update2/" + Id, doadNovo);
+                await InserirAcao(acao);
+
+                NavManager.NavigateTo("/doadNovo/index/");
+                break;
+        }
+    }
+
+    private async Task InserirAcao(string acao)
+    {
+        AcaoDoadNovo acaoDoadNovo = new AcaoDoadNovo
+        {
+            PessoaId = Convert.ToInt32(Id),
+            Telefone = doadNovo.Telefone,
+            Descricao = acao,
+            Dt = Converter.TimeZone(DateTime.UtcNow),
+            FuncionarioId = usuario.Id
+        };
+
+        await Http.PostAsJsonAsync<AcaoDoadNovo>("api/AcaoDoadNovo", acaoDoadNovo);
+    }
+
+}
+
+

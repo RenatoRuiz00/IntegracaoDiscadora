@@ -1,0 +1,142 @@
+﻿@page "/doadNovo/contribuiu/{id}"
+
+@using Operacao.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+
+<h3>Doad. Novo - Contribuiu</h3>
+<hr />
+
+<form method="post" autocomplete="off" @onsubmit="@Submit">
+    <input type="hidden" name="id" @bind="@Id" />
+
+    <div class="form-row">
+        <div class="col">
+            <label>Telefone</label>
+            <input type="text" class="form-control" readonly name="telefone" @bind-value="@doadNovo.Telefone" />
+        </div>
+        <div class="col">
+            <label>Nome</label>
+            <input type="text" class="form-control" maxlength="150" required name="nome" @bind-value="@doadNovo.Nome" />
+        </div>
+        <div class="col">
+            <label>Data Nasc.</label>
+            <input type="date" class="form-control" name="dtNascimento" @bind-value="@doadNovo.DtNascimento" />
+        </div>
+        <div class="col">
+            <label>Tipo</label>
+            <select class="form-control" required name="sexo" @bind="@doadNovo.Sexo">
+                <option>Masculino</option>
+                <option>Feminino</option>
+                <option>Empresa</option>
+            </select>
+        </div>
+        <div class="col">
+            <label>CPF</label>
+            <input type="text" class="form-control" name="cpf" @bind-value="@doadNovo.Cpf" />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col">
+            <label>CEP</label>
+            <input type="text" class="form-control" id="cep" name="cep" minlength="8" maxlength="8" @bind-value="@doadNovo.Cep" @onblur="BuscarCep"/>
+        </div>
+        <div class="col">
+            <label>Endereço</label>
+            <input type="text" class="form-control" id="rua" name="endereco" maxlength="100" required @bind-value="@doadNovo.Endereco" />
+        </div>
+        <div class="col">
+            <label>Número</label>
+            <input type="text" class="form-control" name="numero" required maxlength="20" @bind-value="@doadNovo.Numero" />
+        </div>
+        <div class="col">
+            <label>Bairro</label>
+            <input type="text" class="form-control" id="bairro" name="bairro" maxlength="100" required @bind-value="@doadNovo.Bairro" />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col">
+            <label>Ponto Referência</label>
+            <input type="text" class="form-control" maxlength="50" name="pontoRef" @bind-value="@doadNovo.PontoReferencia" />
+        </div>
+        <div class="col">
+            <label>Complemento</label>
+            <input type="text" class="form-control" maxlength="50" name="complemento" @bind-value="@doadNovo.Complemento" />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col">
+            <label>Cidade</label>
+            <input type="text" class="form-control" id="cidade" name="cidade" maxlength="100" required @bind-value="@doadNovo.Cidade" />
+        </div>
+        <div class="col">
+            <label>Celular 1</label>
+            <input type="text" class="form-control" name="celular1" @bind-value="@doadNovo.Celular1" />
+        </div>
+        <div class="col">
+            <label>Celular 2</label>
+            <input type="text" class="form-control" name="celular2" @bind-value="@doadNovo.Celular2" />
+        </div>
+    </div>.
+    <div class="form-row">
+        <div class="col">
+            <label>Email</label>
+            <input type="text" class="form-control" maxlength="50" name="email" @bind-value="@doadNovo.Email" />
+        </div>
+    </div>
+    <div class="form-row">
+        <div class="col">
+            <label>Obs. Coordenação</label>
+            <textarea class="form-control" maxlength="255" name="obsCoordenacao" @bind="@doadNovo.ObsCoordenacao"></textarea>
+        </div>
+        <div class="col">
+            <label>Obs. Operação</label>
+            <textarea class="form-control" maxlength="255" name="obsOperacao" @bind="@doadNovo.ObsOperacao"></textarea>
+        </div>
+        <div class="col">
+            <label>Obs. Mensageiros</label>
+            <textarea class="form-control" maxlength="255" name="obsMensageiros" @bind="@doadNovo.ObsMensageiros"></textarea>
+        </div>
+        <div class="col">
+            <button class="btn btn-success" style="margin-top:30px;" type="submit">Salvar</button>
+        </div>
+    </div>
+</form>
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+    private DoadNovo doadNovo = new DoadNovo();
+    private List<string> cidades = new List<string>();
+    private List<string> bairros = new List<string>();
+    private List<string> enderecos = new List<string>();
+    private List<string> erros = new List<string>();
+
+    protected override async Task OnInitializedAsync()
+    {
+        enderecos = await Http.GetFromJsonAsync<List<string>>("api/endereco/ruas");
+        bairros = await Http.GetFromJsonAsync<List<string>>("api/endereco/bairros");
+        cidades = await Http.GetFromJsonAsync<List<string>>("api/endereco/cidades");
+
+        doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/" + Id);
+    }
+
+    private async Task Submit()
+    {
+        await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/contribuiu/" + Id, doadNovo);
+
+        NavManager.NavigateTo("/doacao/index/" + Id);
+    }
+
+    private async Task BuscarCep()
+    {
+        LogradouroCep endereco = await Http.GetFromJsonAsync<LogradouroCep>("https://viacep.com.br/ws/" + doadNovo.Cep + "/json");
+
+        doadNovo.Endereco = endereco.Logradouro;
+        doadNovo.Bairro = endereco.Bairro;
+        doadNovo.Cidade = endereco.Localidade;
+    }
+
+}
