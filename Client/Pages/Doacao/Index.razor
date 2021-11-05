@@ -86,6 +86,8 @@
         await DeletarDoadNovo();
         await InserirAcaoDoadNovo();
         await GerarParcelas();
+
+        NavManager.NavigateTo("/doacao/consulta/" + matricula);
     }
 
     private async Task InserirAcaoDoadNovo()

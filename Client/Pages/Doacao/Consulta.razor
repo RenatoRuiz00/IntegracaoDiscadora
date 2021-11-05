@@ -1,5 +1,8 @@
 ﻿@page "/doacao/consulta/{id}"
 @using Operacao.Shared.Models
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
 
 <h3>Consulta Doações</h3>
 <hr />
@@ -41,11 +44,15 @@
     Parcela parcela = new Parcela();
     bool modal = false;
 
+
+    protected override async Task OnInitializedAsync()
+    {
+        parcelas = await Http.GetFromJsonAsync<List<Parcela>>("api/parcela/buscarHoje/" + Id);
+    }
+
     void ExibirModal()
     {
         modal = !modal;
     }
-
-
 
 }
