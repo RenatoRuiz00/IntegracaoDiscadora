@@ -10,5 +10,6 @@ namespace Operacao.Server.Interfaces
     {
         public Task Inserir(Parcela parcela);
         public Task<List<Parcela>> BuscarHoje(int id);
+        public Task Edit(Parcela parcela);
     }
 }

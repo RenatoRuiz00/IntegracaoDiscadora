@@ -3,10 +3,11 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
-@inject IJSRuntime JSRuntime
 
 <h3>Consulta Doações</h3>
 <hr />
+
+<button class="btn btn-success" @onclick="Finalizar" style="margin-bottom: 10px;">Finalizar</button>
 
 <table class="table">
     <thead>
@@ -46,10 +47,14 @@
         parcelas = await Http.GetFromJsonAsync<List<Parcela>>("api/parcela/buscarHoje/" + Id);
     }
 
-    void Editar(int id,int idParcela,DateTime dtVcto,double valor)
+    void Editar(int id, int idParcela, DateTime dtVcto, double valor)
     {
-        NavManager.NavigateTo("/doacao/editar/" + id + "/" + idParcela + "/" + dtVcto.ToString("yyyy-MM-dd") +"/"+ valor);
-       // / doacao / editar /{ id}/{ idParcela}/{ dtVencimento}/{ vlr}
+        NavManager.NavigateTo("/doacao/editar/" + id + "/" + idParcela + "/" + dtVcto.ToString("yyyy-MM-dd") + "/" + valor);
+    }
+
+    void Finalizar()
+    {
+        NavManager.NavigateTo("/doadNovo/index/");
     }
 
 }

@@ -47,9 +47,10 @@ namespace Operacao.Server.Controllers
         }
 
         // PUT api/<ParcelaController>/5
-        [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        [HttpPut]
+        public async Task Put([FromBody] Parcela parcela)
         {
+            await _parcelaService.Edit(parcela);
         }
 
         // DELETE api/<ParcelaController>/5

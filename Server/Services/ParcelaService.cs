@@ -48,6 +48,22 @@ namespace Operacao.Server.Services
             return parcelas;
         }
 
+        public async Task Edit(Parcela parcela)
+        {
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "update tbl_parcelas set curValor=@Valor,dtVencimento=Date(@DtVcto) " +
+                "where id=@Id";
+            command.CommandType = CommandType.Text;
+
+            command.Parameters.Add(new MySqlParameter("@Valor", parcela.Valor));
+            command.Parameters.Add(new MySqlParameter("@DtVcto", parcela.DtVencimento));
+            command.Parameters.Add(new MySqlParameter("@Id", parcela.Id));
+
+            command.ExecuteNonQuery();
+            command.Connection.Close();
+        }
+
         public async Task Inserir(Parcela parcela)
         {
             var command = _context.Database.GetDbConnection().CreateCommand();
