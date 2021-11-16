@@ -3,11 +3,12 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject IJSRuntime JSRuntime
 
 <h3>Consulta Doações</h3>
 <hr />
 
-<table>
+<table class="table">
     <thead>
         <tr>
             <th>Matrícula</th>
@@ -25,16 +26,11 @@
                 <td>@parcela.Id</td>
                 <td>@parcela.Valor.ToString("C2")</td>
                 <td>@parcela.DtVencimento.ToShortDateString()</td>
-                <td><button class="btn btn-primary" @onclick="@ExibirModal">Editar</button></td>
+                <td><button class="btn btn-primary" @onclick="() => Editar(parcela.ContribuinteId,parcela.Id,parcela.DtVencimento,parcela.Valor)">Editar</button></td>
             </tr>
         }
     </tbody>
 </table>
-
-@if (modal == true)
-{
-
-}
 
 @code {
     [Parameter]
@@ -50,9 +46,10 @@
         parcelas = await Http.GetFromJsonAsync<List<Parcela>>("api/parcela/buscarHoje/" + Id);
     }
 
-    void ExibirModal()
+    void Editar(int id,int idParcela,DateTime dtVcto,double valor)
     {
-        modal = !modal;
+        NavManager.NavigateTo("/doacao/editar/" + id + "/" + idParcela + "/" + dtVcto.ToString("yyyy-MM-dd") +"/"+ valor);
+       // / doacao / editar /{ id}/{ idParcela}/{ dtVencimento}/{ vlr}
     }
 
 }

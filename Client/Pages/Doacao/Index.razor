@@ -18,7 +18,7 @@
 
         <div class="col">
             <label>Valor</label>
-            <input class="form-control" type="text" required name="valor" @bind-value="@parcela.Valor" />
+            <input class="form-control" type="text" required name="valor" @bind="@parcela.Valor" />
         </div>
         <div class="col">
             <label>Categoria</label>
@@ -48,8 +48,6 @@
         </div>
     </div>
 </form>
-
-@message
 
 @code {
     [Parameter]
@@ -142,7 +140,6 @@
         //await Http.PutAsJsonAsync<DoadNovo>("api/doadNovo/desativar/" + doadNovo.Id, doadNovo);
         await Http.DeleteAsync("api/doadNovo/" + Id);
     }
-
 
     private async Task GerarParcelas()
     {
