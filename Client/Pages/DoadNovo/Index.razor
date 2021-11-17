@@ -15,7 +15,6 @@
 }
 else
 {
-
     <form method="post" @onsubmit="@Submit" autocomplete="off">
         <input type="hidden" name="id" @bind="@doadNovo.Id" />
         <div class="form-row">
@@ -65,17 +64,19 @@ else
             </div>
         </div>
         <div class="form-row">
-            <div class="col"><label>Obs. Coordenação</label><textarea class="form-control" rows="2" name="obsCoord" @bind="@doadNovo.ObsCoordenacao"></textarea></div>
-            <div class="col"><label>Obs. Operação</label><textarea class="form-control" rows="2" name="obsOper" @bind="@doadNovo.ObsOperacao"></textarea></div>
+            <div class="col">
+                <label>Obs. Coordenação</label>
+                <textarea class="form-control" rows="2" name="obsCoord" @bind="@doadNovo.ObsCoordenacao"></textarea>
+            </div>
+            <div class="col">
+                <label>Obs. Operação</label>
+                <textarea class="form-control" rows="2" name="obsOper" @bind="@doadNovo.ObsOperacao"></textarea>
+            </div>
         </div>
     </form>
 }
 
-
-
-
 @code {
-
     [Parameter]
     public string Id { get; set; }
 

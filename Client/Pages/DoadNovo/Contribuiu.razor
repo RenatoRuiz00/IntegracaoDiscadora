@@ -26,10 +26,10 @@
         </div>
         <div class="col">
             <label>Tipo</label>
-            <select class="form-control" required name="sexo" @bind="@doadNovo.Sexo">
-                <option>Masculino</option>
-                <option>Feminino</option>
-                <option>Empresa</option>
+            <select class="form-control" name="sexo" @bind="@doadNovo.Sexo">
+                    <option selected>Masculino</option>
+                    <option>Feminino</option>
+                    <option>Empresa</option>
             </select>
         </div>
         <div class="col">
@@ -40,7 +40,7 @@
     <div class="form-row">
         <div class="col">
             <label>CEP</label>
-            <input type="text" class="form-control" id="cep" name="cep" minlength="8" maxlength="8" @bind-value="@doadNovo.Cep" @onblur="BuscarCep"/>
+            <input type="text" class="form-control" id="cep" name="cep" minlength="8" maxlength="8" @bind-value="@doadNovo.Cep" @onblur="BuscarCep" />
         </div>
         <div class="col">
             <label>Endereço</label>
@@ -121,6 +121,7 @@
         cidades = await Http.GetFromJsonAsync<List<string>>("api/endereco/cidades");
 
         doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/" + Id);
+        doadNovo.Sexo = "Masculino";
     }
 
     private async Task Submit()

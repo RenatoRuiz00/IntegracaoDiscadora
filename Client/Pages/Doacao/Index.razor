@@ -8,9 +8,9 @@
 <h3>Lançar Doação</h3>
 <hr />
 
-<form>
+<form method="post"  @onsubmit="Submit">
     <input type="hidden" @bind="Id" name="id" />
-    <div class="form-row" @onsubmit="Submit">
+    <div class="form-row">
         <div class="col">
             <label>Data 1 Doação</label>
             <input class="form-control" type="date" min="@Converter.TimeZone(DateTime.UtcNow).ToString("yyyy-MM-dd")" @bind-value="@parcela.DtVencimento" required name="dtDoacao" />
@@ -22,7 +22,7 @@
         </div>
         <div class="col">
             <label>Categoria</label>
-            <select class="form-control" required name="categoria" @bind="@categoria">
+            <select class="form-control" name="categoria" @bind="@categoria">
                 @foreach (Categoria categoria in categorias)
                 {
                     <option>@categoria.Descricao</option>
@@ -44,7 +44,7 @@
             <input class="form-control" type="number" min="0" name="qtdCupons" @bind-value="@parcela.QtdCupons" />
         </div>
         <div class="col" style="margin-top:30px;">
-            <button type="submit" class="btn btn-success" @onclick="@Submit">Lançar Doações</button>
+            <button type="submit" class="btn btn-success">Lançar Doações</button>
         </div>
     </div>
 </form>
@@ -159,7 +159,7 @@
 
         await Http.PostAsJsonAsync<Contrato>("api/contrato/", contrato);
 
-        for (int i = 0; i <= qtdDoacoes; i++)
+        for (int i = 0; i < qtdDoacoes; i++)
         {
             Parcela parcela2 = new Parcela
             {
