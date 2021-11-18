@@ -5,9 +5,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
-
-<h3>Doad. Novo</h3>
-<hr />
+@inject IJSRuntime JsRuntime
 
 @if (!string.IsNullOrEmpty(message))
 {
@@ -48,11 +46,35 @@ else
         <div class="form-row">
             <div class="col">
                 <label>Bairro</label>
-                <input type="text" class="form-control" name="bairro" @bind-value="@doadNovo.Bairro" />
+                <BlazoredTypeahead SearchMethod="BuscarBairro"
+                                   @bind-Value="doadNovo.Bairro">
+                    <SelectedTemplate>
+                        @context
+                    </SelectedTemplate>
+                    <ResultTemplate>
+                        @context
+                    </ResultTemplate>
+
+                    <NotFoundTemplate>
+                        Não há resultados
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
             </div>
             <div class="col">
                 <label>Cidade</label>
-                <input type="text" class="form-control" name="cidade" @bind-value="@doadNovo.Cidade" />
+                <BlazoredTypeahead SearchMethod="BuscarCidade"
+                                   @bind-Value="doadNovo.Cidade">
+                    <SelectedTemplate>
+                        @context
+                    </SelectedTemplate>
+                    <ResultTemplate>
+                        @context
+                    </ResultTemplate>
+
+                    <NotFoundTemplate>
+                        Não há resultados
+                    </NotFoundTemplate>
+                </BlazoredTypeahead>
             </div>
             <div class="col">
                 <label>Celular 1</label>
@@ -76,6 +98,16 @@ else
     </form>
 }
 
+<style>
+    .blazored-typeahead__input {
+        height: calc(1.5em + .75rem + 2px);
+    }
+
+    .blazored-typeahead__controls {
+        height: calc(1.5em + .75rem + 2px);
+    }
+</style>
+
 @code {
     [Parameter]
     public string Id { get; set; }
@@ -84,10 +116,15 @@ else
     private DoadNovo doadNovo = new DoadNovo();
     private string message;
     private string acao = "";
+    private List<string> cidades = new List<string>();
+    private List<string> bairros = new List<string>();
 
     protected override async Task OnInitializedAsync()
     {
         usuario = sessionStorage.GetItem<Funcionario>("usuario");
+
+        bairros = await Http.GetFromJsonAsync<List<string>>("api/endereco/bairros");
+        cidades = await Http.GetFromJsonAsync<List<string>>("api/endereco/cidades");
 
         if (string.IsNullOrEmpty(Id))
         {
@@ -102,6 +139,10 @@ else
                 message = "Não há telefone com esse código";
             }
         }
+
+
+        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input",0,doadNovo.Bairro);
+        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, doadNovo.Cidade);
     }
 
     private async Task Submit()
@@ -121,7 +162,11 @@ else
                 break;
 
             case "Contribuiu":
-                NavManager.NavigateTo("/doadNovo/contribuiu/" + Id);
+                NavManager.NavigateTo("/doadNovo/contribuiu/" + Id + "/false");
+                break;
+
+            case "Boleto":
+                NavManager.NavigateTo("/doadNovo/contribuiu/" + Id + "/true");
                 break;
 
             case "Cidade de fora":
@@ -168,6 +213,16 @@ else
         };
 
         await Http.PostAsJsonAsync<AcaoDoadNovo>("api/AcaoDoadNovo", acaoDoadNovo);
+    }
+
+    private async Task<IEnumerable<string>> BuscarBairro(string nome)
+    {
+        return await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    private async Task<IEnumerable<string>> BuscarCidade(string nome)
+    {
+        return await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
     }
 
 }

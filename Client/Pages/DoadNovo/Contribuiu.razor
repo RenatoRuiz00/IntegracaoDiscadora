@@ -1,12 +1,25 @@
-﻿@page "/doadNovo/contribuiu/{id}"
+﻿@page "/doadNovo/contribuiu/{id}/{boleto}"
 
 @using Operacao.Shared.Models
+@using Operacao.Shared.Utils
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@using Blazored.Typeahead
+@inject IJSRuntime JsRuntime
 
-<h3>Doad. Novo - Contribuiu</h3>
-<hr />
+@if (erros != null && erros.Count > 0)
+{
+    foreach (string erro in erros)
+    {
+        <div class="alert alert-danger alert-dismissible fade show" role="alert">
+            <strong>@erro</strong>
+            <button type="button" class="close" data-dismiss="alert" aria-label="Close">
+                <span aria-hidden="true"></span>
+            </button>
+        </div>
+    }
+}
 
 <form method="post" autocomplete="off" @onsubmit="@Submit">
     <input type="hidden" name="id" @bind="@Id" />
@@ -27,9 +40,9 @@
         <div class="col">
             <label>Tipo</label>
             <select class="form-control" name="sexo" @bind="@doadNovo.Sexo">
-                    <option selected>Masculino</option>
-                    <option>Feminino</option>
-                    <option>Empresa</option>
+                <option selected>Masculino</option>
+                <option>Feminino</option>
+                <option>Empresa</option>
             </select>
         </div>
         <div class="col">
@@ -44,7 +57,20 @@
         </div>
         <div class="col">
             <label>Endereço</label>
-            <input type="text" class="form-control" id="rua" name="endereco" maxlength="100" required @bind-value="@doadNovo.Endereco" />
+            <!--<input type="text" class="form-control" id="rua" name="endereco" maxlength="100" required @bind-value="@doadNovo.Endereco" />-->
+            <BlazoredTypeahead SearchMethod="BuscarEndereco"
+                               @bind-Value="doadNovo.Endereco">
+                <SelectedTemplate>
+                    @context
+                </SelectedTemplate>
+                <ResultTemplate>
+                    @context
+                </ResultTemplate>
+
+                <NotFoundTemplate>
+                    Não há resultados
+                </NotFoundTemplate>
+            </BlazoredTypeahead>
         </div>
         <div class="col">
             <label>Número</label>
@@ -52,7 +78,19 @@
         </div>
         <div class="col">
             <label>Bairro</label>
-            <input type="text" class="form-control" id="bairro" name="bairro" maxlength="100" required @bind-value="@doadNovo.Bairro" />
+            <BlazoredTypeahead SearchMethod="BuscarBairro"
+                               @bind-Value="doadNovo.Bairro">
+                <SelectedTemplate>
+                    @context
+                </SelectedTemplate>
+                <ResultTemplate>
+                    @context
+                </ResultTemplate>
+
+                <NotFoundTemplate>
+                    Não há resultados
+                </NotFoundTemplate>
+            </BlazoredTypeahead>
         </div>
     </div>
     <div class="form-row">
@@ -68,7 +106,19 @@
     <div class="form-row">
         <div class="col">
             <label>Cidade</label>
-            <input type="text" class="form-control" id="cidade" name="cidade" maxlength="100" required @bind-value="@doadNovo.Cidade" />
+            <BlazoredTypeahead SearchMethod="BuscarCidade"
+                               @bind-Value="doadNovo.Cidade">
+                <SelectedTemplate>
+                    @context
+                </SelectedTemplate>
+                <ResultTemplate>
+                    @context
+                </ResultTemplate>
+
+                <NotFoundTemplate>
+                    Não há resultados
+                </NotFoundTemplate>
+            </BlazoredTypeahead>
         </div>
         <div class="col">
             <label>Celular 1</label>
@@ -78,7 +128,7 @@
             <label>Celular 2</label>
             <input type="text" class="form-control" name="celular2" @bind-value="@doadNovo.Celular2" />
         </div>
-    </div>.
+    </div>
     <div class="form-row">
         <div class="col">
             <label>Email</label>
@@ -104,9 +154,21 @@
     </div>
 </form>
 
+<style>
+    .blazored-typeahead__input {
+        height: calc(1.5em + .75rem + 2px);
+    }
+
+    .blazored-typeahead__controls {
+        height: calc(1.5em + .75rem + 2px);
+    }
+</style>
+
 @code {
     [Parameter]
     public string Id { get; set; }
+    [Parameter]
+    public string Boleto { get; set; }
 
     private DoadNovo doadNovo = new DoadNovo();
     private List<string> cidades = new List<string>();
@@ -122,22 +184,123 @@
 
         doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/" + Id);
         doadNovo.Sexo = "Masculino";
+
+        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, doadNovo.Bairro);
+        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 2, doadNovo.Cidade);
     }
 
     private async Task Submit()
     {
-        await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/contribuiu/" + Id, doadNovo);
+        erros.Clear();
+        Verificacoes();
+        if (Boleto == "true")
+        {
+            VerificarBoleto();
+        }
 
-        NavManager.NavigateTo("/doacao/index/" + Id);
+        if (erros.Count == 0)
+        {
+            await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/contribuiu/" + Id, doadNovo);
+
+            NavManager.NavigateTo("/doacao/index/" + Id + "/" + Boleto);
+        }
     }
 
     private async Task BuscarCep()
     {
-        LogradouroCep endereco = await Http.GetFromJsonAsync<LogradouroCep>("https://viacep.com.br/ws/" + doadNovo.Cep + "/json");
+        if (!string.IsNullOrEmpty(doadNovo.Cep))
+        {
+            try
+            {
+                LogradouroCep endereco = await Http.GetFromJsonAsync<LogradouroCep>
+    ("https://viacep.com.br/ws/" + doadNovo.Cep + "/json");
 
-        doadNovo.Endereco = endereco.Logradouro;
-        doadNovo.Bairro = endereco.Bairro;
-        doadNovo.Cidade = endereco.Localidade;
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 0, endereco.Logradouro);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, endereco.Bairro);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 2, endereco.Localidade);
+
+                doadNovo.Endereco = endereco.Logradouro;
+                doadNovo.Bairro = endereco.Bairro;
+                doadNovo.Cidade = endereco.Localidade;
+            }
+            catch
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "Não foi possível consultar o endereço, verifique se você inserir um CEP válido!"); // Alert
+            }
+        }
+    }
+
+    private async Task<IEnumerable<string>> BuscarEndereco(string nome)
+    {
+        return await Task.FromResult(enderecos.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    private async Task<IEnumerable<string>> BuscarBairro(string nome)
+    {
+        return await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    private async Task<IEnumerable<string>> BuscarCidade(string nome)
+    {
+        return await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    void Verificacoes()
+    {
+        if (string.IsNullOrEmpty(doadNovo.Endereco))
+        {
+            erros.Add("Digite um endereço!");
+        }
+
+        if (string.IsNullOrEmpty(doadNovo.Bairro))
+        {
+            erros.Add("Digite um bairro!");
+        }
+
+        if (string.IsNullOrEmpty(doadNovo.Endereco))
+        {
+            erros.Add("Digite uma cidade!");
+        }
+    }
+
+    void VerificarBoleto()
+    {
+        //Verifico se o nome possui mais de 50 caracteres
+        if (doadNovo.Nome.Length > 50)
+        {
+            erros.Add("O nome não pode ter mais de 50 caracteres!");
+        }
+
+        //Verifico se é um CNPJ ou CPF válido
+        if (!string.IsNullOrEmpty(doadNovo.Cpf))
+        {
+            if (doadNovo.Sexo == "Empresa")
+            {
+                if (Validacoes.IsCnpj(doadNovo.Cpf) == false)
+                {
+                    erros.Add("Digite um CNPJ válido");
+                }
+            }
+            else
+            {
+                if (Validacoes.IsCpf(doadNovo.Cpf) == false)
+                {
+                    erros.Add("Digite um CPF válido");
+                }
+            }
+        }
+        else
+        {
+            erros.Add("Insira o CPF ou CNPJ");
+        }
+
+
+        //Verifico se é um email válido
+        if (Validacoes.IsValidEmail(doadNovo.Email) == false)
+        {
+            erros.Add("Digite um email válido");
+        }
+
     }
 
 }

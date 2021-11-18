@@ -1,19 +1,30 @@
-﻿@page "/doacao/index/{id}"
+﻿@page "/doacao/index/{id}/{boleto}"
 @using Operacao.Shared.Models
 @using Operacao.Shared.Utils
+@using Operacao.Shared.Models.PagSeguro
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
-
+@using System.Text.Json.Serialization;
+@using System.Text.Json;
 <h3>Lançar Doação</h3>
 <hr />
 
-<form method="post"  @onsubmit="Submit">
+<form method="post" @onsubmit="Submit">
     <input type="hidden" @bind="Id" name="id" />
     <div class="form-row">
         <div class="col">
             <label>Data 1 Doação</label>
-            <input class="form-control" type="date" min="@Converter.TimeZone(DateTime.UtcNow).ToString("yyyy-MM-dd")" @bind-value="@parcela.DtVencimento" required name="dtDoacao" />
+
+            @if (Boleto == "true")
+            {
+                <input class="form-control" type="date" min="@Converter.TimeZone(DateTime.UtcNow).AddDays(1).ToString("yyyy-MM-dd")" max="@Converter.TimeZone(DateTime.UtcNow).AddDays(30).ToString("yyyy-MM-dd")" @bind-value="@parcela.DtVencimento" required name="dtDoacao" />
+            }
+            else
+            {
+                <input class="form-control" type="date" min="@Converter.TimeZone(DateTime.UtcNow).ToString("yyyy-MM-dd")" @bind-value="@parcela.DtVencimento" required name="dtDoacao" />
+            }
+
         </div>
 
         <div class="col">
@@ -48,10 +59,12 @@
         </div>
     </div>
 </form>
-
+@message;
 @code {
     [Parameter]
     public string Id { get; set; }
+    [Parameter]
+    public string Boleto { get; set; }
 
     private Funcionario usuario;
     private Parcela parcela = new Parcela();
@@ -61,6 +74,7 @@
     private int qtdDoacoes = 1;
     private int matricula;
     private DoadNovo doadNovo;
+    private Credencial credencial;
 
     string message = "";
 
@@ -73,6 +87,11 @@
             NavManager.NavigateTo("/");
         }
 
+        if (Boleto == "true")
+        {
+            await BuscarCredenciaisBoleto();
+        }
+
         parcela.DtVencimento = Converter.TimeZone(DateTime.UtcNow);
         categorias = await Http.GetFromJsonAsync<List<Categoria>>("api/categoria/");
         doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/buscarporid2/" + Id);
@@ -80,6 +99,12 @@
 
     private async Task Submit()
     {
+        if (Boleto == "true")
+        {
+            await EnviarBoleto();
+            return;
+        }
+
         await InserirCliente();
         await DeletarDoadNovo();
         await InserirAcaoDoadNovo();
@@ -189,6 +214,73 @@
         await Http.PostAsJsonAsync<Parcela>("api/doadnovo/inserirResultado/", parcela);
     }
 
+    async Task BuscarCredenciaisBoleto()
+    {
+        credencial = await Http.GetFromJsonAsync<Credencial>("api/boleto");
+    }
+
+    async Task EnviarBoleto()
+    {
+        string tipoDoc = "CPF";
+        if (doadNovo.Sexo == "Empresa")
+        {
+            tipoDoc = "CNPJ";
+        }
+
+        Address address = new Address
+        {
+            Street = doadNovo.Endereco,
+            District = doadNovo.Bairro,
+            City = doadNovo.Cidade,
+            Number = doadNovo.Numero,
+            State = credencial.UF,
+            PostalCode = "17208110"
+        };
+
+        Document document = new Document
+        {
+            Type = tipoDoc,
+            Value = doadNovo.Cpf
+        };
+
+        Phone phone = new Phone
+        {
+            AreaCode = credencial.DDD,
+            Number = doadNovo.Telefone
+        };
+
+        Customer doador = new Customer
+        {
+            Address = address,
+            Document = document,
+            Name = doadNovo.Nome,
+            Email = doadNovo.Email,
+            Phone = phone
+        };
+
+        Boleto boleto = new Boleto
+        {
+            Periodicity = "monthly",
+            Reference = "Telefone " + doadNovo.Telefone,
+            FirstDueDate = parcela.DtVencimento.ToString("yyyy-MM-dd"),
+            NumberOfPayments = 1,
+            Amount = parcela.Valor,
+            Customer = doador,
+            Description = "Doacao"
+        };
+
+        message = JsonSerializer.Serialize(boleto);
+
+        var result = await Http.PostAsJsonAsync<Boleto>("api/doadnovo/inserirResultado/", boleto);
+        if (result.IsSuccessStatusCode)
+        {
+            message = await result.Content.ReadAsStringAsync();
+        }
+        else
+        {
+            message = await result.Content.ReadAsStringAsync();
+        }
+    }
 
 
 }

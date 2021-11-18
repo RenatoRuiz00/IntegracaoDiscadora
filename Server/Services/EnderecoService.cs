@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using MySql.Data.MySqlClient;
 using Operacao.Server.Data;
 using Operacao.Server.Interfaces;
 using System.Collections.Generic;
@@ -49,7 +50,7 @@ namespace Operacao.Server.Services
 
             while (result.Read())
             {
-                cidades.Add(result["bairro"].ToString());
+                cidades.Add(result["cidade"].ToString());
             }
 
             command.Connection.Close();
@@ -65,6 +66,28 @@ namespace Operacao.Server.Services
             command.CommandText = "select distinct strEndereco endereco from clientes where (cancelado='A' or cancelado is null) order by strEndereco";
             command.CommandType = CommandType.Text;
 
+            var result = command.ExecuteReader();
+
+            while (result.Read())
+            {
+                enderecos.Add(result["endereco"].ToString());
+            }
+
+            command.Connection.Close();
+            return enderecos;
+        }
+
+        public async Task<IEnumerable<string>> BuscarEnderecosPorNome(string nome)
+        {
+            List<string> enderecos = new List<string>();
+
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "select distinct strEndereco endereco from clientes " +
+                "where (cancelado='A' or cancelado is null) and " +
+                "strEndereco like @Nome order by strEndereco";
+            command.CommandType = CommandType.Text;
+            command.Parameters.Add(new MySqlParameter("@Nome", "%" + nome + "%"));
             var result = command.ExecuteReader();
 
             while (result.Read())

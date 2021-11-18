@@ -43,6 +43,7 @@ namespace Operacao.Server
             services.AddScoped<ContribuinteService>();
             services.AddScoped<ContratoService>();
             services.AddScoped<ParcelaService>();
+            services.AddScoped<BoletoService>();
 
             services.AddBlazoredSessionStorage();
         }

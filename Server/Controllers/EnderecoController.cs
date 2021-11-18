@@ -23,6 +23,12 @@ namespace Operacao.Server.Controllers
             return await _service.BuscarEnderecos();
         }
 
+        [HttpGet("ruaspornome/{nome}")]
+        public async Task<IEnumerable<string>> BuscarEnderecos(string nome)
+        {
+            return await _service.BuscarEnderecosPorNome(nome);
+        }
+
         [HttpGet("bairros/")]
         public async Task<IEnumerable<string>> BuscarBairros()
         {
@@ -32,7 +38,7 @@ namespace Operacao.Server.Controllers
         [HttpGet("cidades/")]
         public async Task<IEnumerable<string>> BuscarCidades()
         {
-            return await _service.BuscarEnderecos();
+            return await _service.BuscarCidades();
         }
 
 
