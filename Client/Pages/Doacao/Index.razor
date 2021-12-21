@@ -7,8 +7,16 @@
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
 @using System.Text.Json.Serialization;
 @using System.Text.Json;
+
 <h3>Lançar Doação</h3>
 <hr />
+
+@foreach (string erro in erros)
+{
+    <div class="alert alert-danger" role="alert">
+        @erro
+    </div>
+}
 
 <form method="post" @onsubmit="Submit">
     <input type="hidden" @bind="Id" name="id" />
@@ -59,7 +67,7 @@
         </div>
     </div>
 </form>
-@message;
+
 @code {
     [Parameter]
     public string Id { get; set; }
@@ -75,6 +83,9 @@
     private int matricula;
     private DoadNovo doadNovo;
     private Credencial credencial;
+
+
+    List<string> erros = new List<string>();
 
     string message = "";
 
@@ -99,10 +110,15 @@
 
     private async Task Submit()
     {
+        erros.Clear();
         if (Boleto == "true")
         {
             await EnviarBoleto();
-            return;
+            if (erros.Count > 0)
+            {
+                return;
+            }
+            //return;
         }
 
         await InserirCliente();
@@ -186,6 +202,10 @@
 
         for (int i = 0; i < qtdDoacoes; i++)
         {
+            bool boleto = Boleto == "true" ? true : false;
+            bool impresso = boleto == true ? true : false;
+            DateTime? dtImpresso = boleto == true ? Converter.ToDateTime(DateTime.Now) : null;
+
             Parcela parcela2 = new Parcela
             {
                 ContribuinteId = matricula,
@@ -195,9 +215,9 @@
                 FuncionarioId = usuario.Id,
                 ContratoId = idContrato,
                 QtdCupons = parcela.QtdCupons,
-                Boleto = null,
-                Impresso = false,
-                DtImpressao = null
+                Boleto = boleto,
+                Impresso = impresso,
+                DtImpressao = dtImpresso
             };
             await Http.PostAsJsonAsync<Parcela>("api/parcela", parcela2);
         }
@@ -271,16 +291,37 @@
 
         message = JsonSerializer.Serialize(boleto);
 
-        var result = await Http.PostAsJsonAsync<Boleto>("api/doadnovo/inserirResultado/", boleto);
+        var result = await Http.PostAsJsonAsync<Boleto>("api/boleto", boleto);
         if (result.IsSuccessStatusCode)
         {
             message = await result.Content.ReadAsStringAsync();
+
+            Console.WriteLine(await result.Content.ReadAsStringAsync());
+
+
+            BoletoParcela boletoParcela = new BoletoParcela
+            {
+                ParcelaId = await Http.GetFromJsonAsync<int>("api/parcela/ultimoId") + 1,
+                CodBoleto = "584fgj4t84t948304",
+                Link = "google.com"
+            };
+
+            await Http.PostAsJsonAsync<BoletoParcela>("api/boleto/boletoparcela/", boletoParcela);
         }
         else
         {
             message = await result.Content.ReadAsStringAsync();
-        }
-    }
+            Errors myDeserializedClass = JsonSerializer.Deserialize<Errors>(message);
 
+            foreach (Error erro in myDeserializedClass.errors)
+            {
+                erros.Add(erro.Message);
+            }
+        }
+
+
+
+        //return;
+    }
 
 }

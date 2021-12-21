@@ -59,5 +59,11 @@ namespace Operacao.Server.Controllers
         {
 
         }
+
+        [HttpGet("ultimoId/")]
+        public async Task<int> UltimoId()
+        {
+            return await _parcelaService.UltimoId();
+        }
     }
 }

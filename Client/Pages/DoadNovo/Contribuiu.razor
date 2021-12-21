@@ -271,6 +271,11 @@
             erros.Add("O nome não pode ter mais de 50 caracteres!");
         }
 
+        if (doadNovo.Nome.IndexOf(' ') < 0)
+        {
+            erros.Add("Digite o nome completo!");
+        }
+
         //Verifico se é um CNPJ ou CPF válido
         if (!string.IsNullOrEmpty(doadNovo.Cpf))
         {
@@ -293,7 +298,6 @@
         {
             erros.Add("Insira o CPF ou CNPJ");
         }
-
 
         //Verifico se é um email válido
         if (Validacoes.IsValidEmail(doadNovo.Email) == false)

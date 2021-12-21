@@ -1,0 +1,19 @@
+﻿@page "/contribuinte/cadastro/{id}"
+
+<h3>Cadastro - Contribuinte</h3>
+<hr />
+
+@if (string.IsNullOrEmpty(Id))
+{
+    <div class="alert alert-danger" role="alert">
+        Não foi definido um código
+    </div>
+}
+
+
+
+@code {
+    [Parameter]
+    public string Id { get; set; }
+
+}

@@ -8,6 +8,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Linq;
 using System.Threading.Tasks;
+using Operacao.Shared.Utils;
 
 namespace Operacao.Server.Services
 {
@@ -26,7 +27,7 @@ namespace Operacao.Server.Services
 
             var command = _context.Database.GetDbConnection().CreateCommand();
             command.Connection.Open();
-            command.CommandText = "select id,matricula,curValor,dtVencimento from " +
+            command.CommandText = "select id,matricula,curValor,dtVencimento,bytParcela,boleto from " +
                 "tbl_parcelas where matricula=@IdContribuinte and Date(dtLigacao)=Date(Now())";
             command.CommandType = CommandType.Text;
             command.Parameters.Add(new MySqlParameter("@IdContribuinte", id));
@@ -40,7 +41,9 @@ namespace Operacao.Server.Services
                     Id = Convert.ToInt32(result["id"]),
                     ContribuinteId = Convert.ToInt32(result["matricula"]),
                     Valor = Convert.ToDouble(result["curValor"]),
-                    DtVencimento = Convert.ToDateTime(result["dtVencimento"])
+                    DtVencimento = Convert.ToDateTime(result["dtVencimento"]),
+                    BytParcela = Convert.ToInt32(result["bytParcela"]), 
+                    Boleto = Converter.ToBool(result["boleto"])
                 });
             }
 
@@ -87,6 +90,26 @@ namespace Operacao.Server.Services
 
             command.ExecuteNonQuery();
             command.Connection.Close();
+        }
+
+        public async Task<int> UltimoId()
+        {
+            int id = 0;
+
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "select max(id) id from tbl_parcelas";
+            command.CommandType = CommandType.Text;
+
+            var result = command.ExecuteReader();
+
+            while (result.Read())
+            {
+                id = Convert.ToInt32(result["id"]);            
+            }
+
+            command.Connection.Close();
+            return id;
         }
     }
 }

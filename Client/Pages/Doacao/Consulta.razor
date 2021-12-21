@@ -27,7 +27,16 @@
                 <td>@parcela.Id</td>
                 <td>@parcela.Valor.ToString("C2")</td>
                 <td>@parcela.DtVencimento.ToShortDateString()</td>
-                <td><button class="btn btn-primary" @onclick="() => Editar(parcela.ContribuinteId,parcela.Id,parcela.DtVencimento,parcela.Valor)">Editar</button></td>
+
+
+                @if (parcela.BytParcela == 1 && parcela.Boleto == true)
+                {
+                    <td><button class="btn btn-primary" disabled>Editar</button></td>
+                }
+                else
+                {
+                    <td><button class="btn btn-primary" @onclick="() => Editar(parcela.ContribuinteId,parcela.Id,parcela.DtVencimento,parcela.Valor)">Editar</button></td>
+                }
             </tr>
         }
     </tbody>
@@ -56,5 +65,4 @@
     {
         NavManager.NavigateTo("/doadNovo/index/");
     }
-
 }
