@@ -21,8 +21,4 @@
     <ProjectReference Include="..\Shared\Operacao.Shared.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <Folder Include="wwwroot\imgs\" />
-  </ItemGroup>
-
 </Project>

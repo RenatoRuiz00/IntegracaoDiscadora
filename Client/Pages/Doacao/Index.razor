@@ -68,6 +68,11 @@
     </div>
 </form>
 
+@if (loading == true)
+{
+    <img src="imgs/carregando.gif" />
+}
+
 @code {
     [Parameter]
     public string Id { get; set; }
@@ -84,6 +89,7 @@
     private DoadNovo doadNovo;
     private Credencial credencial;
 
+    bool loading = false;
 
     List<string> erros = new List<string>();
 
@@ -113,7 +119,9 @@
         erros.Clear();
         if (Boleto == "true")
         {
+            loading = true;
             await EnviarBoleto();
+            loading = false;
             if (erros.Count > 0)
             {
                 return;
@@ -297,7 +305,6 @@
             message = await result.Content.ReadAsStringAsync();
 
             Console.WriteLine(await result.Content.ReadAsStringAsync());
-
 
             BoletoParcela boletoParcela = new BoletoParcela
             {

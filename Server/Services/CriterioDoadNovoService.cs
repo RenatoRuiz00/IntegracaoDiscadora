@@ -21,7 +21,7 @@ namespace Operacao.Server.Services
             string campo = "";
             switch (acao)
             {
-                case "Já  contribui":
+                case "Já contribui":
                     campo = "JaContribui";
                     break;
 

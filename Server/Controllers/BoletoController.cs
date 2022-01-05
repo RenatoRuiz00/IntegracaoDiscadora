@@ -65,7 +65,6 @@ namespace Operacao.Server.Controllers
             }
         }
 
-
         [HttpPost("boletoparcela")]
         public async Task InsertBoletoParcela([FromBody] BoletoParcela boleto)
         {

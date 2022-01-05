@@ -46,35 +46,22 @@ else
         <div class="form-row">
             <div class="col">
                 <label>Bairro</label>
-                <BlazoredTypeahead SearchMethod="BuscarBairro"
-                                   @bind-Value="doadNovo.Bairro">
-                    <SelectedTemplate>
-                        @context
-                    </SelectedTemplate>
-                    <ResultTemplate>
-                        @context
-                    </ResultTemplate>
-
-                    <NotFoundTemplate>
-                        Não há resultados
-                    </NotFoundTemplate>
-                </BlazoredTypeahead>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" @bind-value="@doadNovo.Bairro">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Bairro"))">Buscar</button>
+                    </div>
+                </div>
             </div>
             <div class="col">
                 <label>Cidade</label>
-                <BlazoredTypeahead SearchMethod="BuscarCidade"
-                                   @bind-Value="doadNovo.Cidade">
-                    <SelectedTemplate>
-                        @context
-                    </SelectedTemplate>
-                    <ResultTemplate>
-                        @context
-                    </ResultTemplate>
 
-                    <NotFoundTemplate>
-                        Não há resultados
-                    </NotFoundTemplate>
-                </BlazoredTypeahead>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control" @bind-value="@doadNovo.Cidade">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Cidade"))">Buscar</button>
+                    </div>
+                </div>
             </div>
             <div class="col">
                 <label>Celular 1</label>
@@ -88,23 +75,89 @@ else
         <div class="form-row">
             <div class="col">
                 <label>Obs. Coordenação</label>
-                <textarea class="form-control" rows="2" name="obsCoord" @bind="@doadNovo.ObsCoordenacao"></textarea>
+                <textarea class="form-control" rows="2" name="obsCoord" @bind="@doadNovo.ObsCoordenacao" @bind:event="oninput"></textarea>
             </div>
             <div class="col">
                 <label>Obs. Operação</label>
-                <textarea class="form-control" rows="2" name="obsOper" @bind="@doadNovo.ObsOperacao"></textarea>
+                <textarea class="form-control" rows="2" name="obsOper" @bind="@doadNovo.ObsOperacao" @bind:event="oninput"></textarea>
             </div>
         </div>
     </form>
 }
 
+@if (showModal)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display: block;" data-backdrop="false">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Consulta - @tipoBusca</h5>
+                    <button type="button" class="close" aria-label="Close" @onclick="()=> showModal=false">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" @bind-value="@search" @onkeyup="Enter">
+                        <div class="input-group-append">
+                            @if (tipoBusca == "Bairro")
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarBairro(search)">Buscar</button>
+
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarCidade(search)">Buscar</button>
+                            }
+
+                        </div>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (string item in list)
+                            {
+                                <tr>
+                                    <td>@item</td>
+                                    <td><button class="btn btn-primary" @onclick="()=> Selecionar(item)"><span class="oi oi-check" aria-hidden="true"></span></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+
 <style>
-    .blazored-typeahead__input {
+    /*.blazored-typeahead__input {
         height: calc(1.5em + .75rem + 2px);
     }
 
     .blazored-typeahead__controls {
         height: calc(1.5em + .75rem + 2px);
+    }*/
+    .modal {
+        display: block !important; /* I added this to see the modal, you don't need this */
+    }
+
+    /* Important part */
+    .modal-dialog {
+        overflow-y: initial !important
+    }
+
+    .modal-body {
+        height: 500px;
+        overflow-y: auto;
     }
 </style>
 
@@ -118,6 +171,11 @@ else
     private string acao = "";
     private List<string> cidades = new List<string>();
     private List<string> bairros = new List<string>();
+    private List<string> list = new List<string>();
+
+    bool showModal = false;
+    string search = "";
+    string tipoBusca = "";
 
     protected override async Task OnInitializedAsync()
     {
@@ -140,9 +198,8 @@ else
             }
         }
 
-
-        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input",0,doadNovo.Bairro);
-        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, doadNovo.Cidade);
+        //await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 0, doadNovo.Bairro);
+        //await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, doadNovo.Cidade);
     }
 
     private async Task Submit()
@@ -181,7 +238,7 @@ else
                 await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/update2/" + Id, doadNovo);
                 await InserirAcao("Enviou para Coordenadora");
 
-                NavManager.NavigateTo("/doadNovo/index/");
+                NavManager.NavigateTo("/doadNovo/index", true);
                 break;
 
             default:
@@ -196,7 +253,7 @@ else
                 await Http.PutAsJsonAsync<DoadNovo>("api/doadnovo/update2/" + Id, doadNovo);
                 await InserirAcao(acao);
 
-                NavManager.NavigateTo("/doadNovo/index/");
+                NavManager.NavigateTo("/doadNovo/index", true);
                 break;
         }
     }
@@ -215,14 +272,59 @@ else
         await Http.PostAsJsonAsync<AcaoDoadNovo>("api/AcaoDoadNovo", acaoDoadNovo);
     }
 
-    private async Task<IEnumerable<string>> BuscarBairro(string nome)
+    private async Task BuscarBairro(string nome)
     {
-        return await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+        list = await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
     }
 
-    private async Task<IEnumerable<string>> BuscarCidade(string nome)
+    private async Task BuscarCidade(string nome)
     {
-        return await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+        list = await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    void Selecionar(string item)
+    {
+        if (tipoBusca == "Bairro")
+        {
+            doadNovo.Bairro = item;
+        }
+        else
+        {
+            doadNovo.Cidade = item;
+        }
+
+        showModal = false;
+        search = "";
+    }
+
+    void AbrirModal(string tipo)
+    {
+        tipoBusca = tipo;
+        showModal = true;
+
+        if (tipo == "Bairro")
+        {
+            list = bairros;
+        }
+        else
+        {
+            list = cidades;
+        }
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            if (tipoBusca == "Bairro")
+            {
+                await BuscarBairro(search);
+            }
+            else
+            {
+                await BuscarCidade(search);
+            }
+        }
     }
 
 }

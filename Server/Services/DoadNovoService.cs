@@ -67,7 +67,9 @@ namespace Operacao.Server.Services
             var command = _context.Database.GetDbConnection().CreateCommand();
             command.Connection.Open();
             command.CommandText = "select lista_fone_ddd,lista_fone_numero,lista_retorno," +
-                "lista_celular1,lista_celular2,lista_bairro,lista_cidade from lista where lista_id=@Id";
+                "lista_celular1,lista_celular2,lista_bairro,lista_cidade," +
+                "lista_obscoordenadora obsCoord,lista_obsoperadora obsOper " +
+                "from lista where lista_id=@Id";
             command.CommandType = CommandType.Text;
             command.Parameters.Add(new MySqlParameter("@Id", id));
 
@@ -84,7 +86,9 @@ namespace Operacao.Server.Services
                     Cidade = result["lista_cidade"].ToString(),
                     Celular1 = result["lista_celular1"].ToString(),
                     Celular2 = result["lista_celular2"].ToString(),
-                    DtRetorno = Convert.ToDateTime(result["lista_retorno"])
+                    DtRetorno = Convert.ToDateTime(result["lista_retorno"]),
+                    ObsCoordenacao = result["obsCoord"].ToString(),
+                    ObsOperacao = result["obsOper"].ToString(),
                 };
             }
 

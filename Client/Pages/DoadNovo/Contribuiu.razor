@@ -58,19 +58,12 @@
         <div class="col">
             <label>Endereço</label>
             <!--<input type="text" class="form-control" id="rua" name="endereco" maxlength="100" required @bind-value="@doadNovo.Endereco" />-->
-            <BlazoredTypeahead SearchMethod="BuscarEndereco"
-                               @bind-Value="doadNovo.Endereco">
-                <SelectedTemplate>
-                    @context
-                </SelectedTemplate>
-                <ResultTemplate>
-                    @context
-                </ResultTemplate>
-
-                <NotFoundTemplate>
-                    Não há resultados
-                </NotFoundTemplate>
-            </BlazoredTypeahead>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control cep" @bind-value="@doadNovo.Endereco">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Endereço"))">Buscar</button>
+                </div>
+            </div>
         </div>
         <div class="col">
             <label>Número</label>
@@ -78,19 +71,12 @@
         </div>
         <div class="col">
             <label>Bairro</label>
-            <BlazoredTypeahead SearchMethod="BuscarBairro"
-                               @bind-Value="doadNovo.Bairro">
-                <SelectedTemplate>
-                    @context
-                </SelectedTemplate>
-                <ResultTemplate>
-                    @context
-                </ResultTemplate>
-
-                <NotFoundTemplate>
-                    Não há resultados
-                </NotFoundTemplate>
-            </BlazoredTypeahead>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control cep" @bind-value="@doadNovo.Bairro" id="bairro">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Bairro"))">Buscar</button>
+                </div>
+            </div>
         </div>
     </div>
     <div class="form-row">
@@ -106,19 +92,12 @@
     <div class="form-row">
         <div class="col">
             <label>Cidade</label>
-            <BlazoredTypeahead SearchMethod="BuscarCidade"
-                               @bind-Value="doadNovo.Cidade">
-                <SelectedTemplate>
-                    @context
-                </SelectedTemplate>
-                <ResultTemplate>
-                    @context
-                </ResultTemplate>
-
-                <NotFoundTemplate>
-                    Não há resultados
-                </NotFoundTemplate>
-            </BlazoredTypeahead>
+            <div class="input-group mb-3">
+                <input type="text" class="form-control cep" @bind-value="@doadNovo.Cidade" id="cidade">
+                <div class="input-group-append">
+                    <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Cidade"))">Buscar</button>
+                </div>
+            </div>
         </div>
         <div class="col">
             <label>Celular 1</label>
@@ -154,13 +133,84 @@
     </div>
 </form>
 
+@if (showModal)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display: block;" data-backdrop="false">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Consulta - @tipoBusca</h5>
+                    <button type="button" class="close" aria-label="Close" @onclick="()=> showModal=false">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" @bind-value="@search" @onkeyup="Enter">
+                        <div class="input-group-append">
+                            @if (tipoBusca == "Bairro")
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarBairro(search)">Buscar</button>
+
+                            }
+                            else if (tipoBusca == "Endereço")
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarEndereco(search)">Buscar</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarCidade(search)">Buscar</button>
+                            }
+
+                        </div>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (string item in list)
+                            {
+                                <tr>
+                                    <td>@item</td>
+                                    <td><button class="btn btn-primary" @onclick="()=> Selecionar(item)"><span class="oi oi-check" aria-hidden="true"></span></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+
 <style>
-    .blazored-typeahead__input {
+    /*.blazored-typeahead__input {
         height: calc(1.5em + .75rem + 2px);
     }
 
     .blazored-typeahead__controls {
         height: calc(1.5em + .75rem + 2px);
+    }*/
+
+    .modal {
+        display: block !important; /* I added this to see the modal, you don't need this */
+    }
+
+    /* Important part */
+    .modal-dialog {
+        overflow-y: initial !important
+    }
+
+    .modal-body {
+        height: 500px;
+        overflow-y: auto;
     }
 </style>
 
@@ -176,6 +226,11 @@
     private List<string> enderecos = new List<string>();
     private List<string> erros = new List<string>();
 
+    private List<string> list = new List<string>();
+    bool showModal = false;
+    string search = "";
+    string tipoBusca = "";
+
     protected override async Task OnInitializedAsync()
     {
         enderecos = await Http.GetFromJsonAsync<List<string>>("api/endereco/ruas");
@@ -185,8 +240,8 @@
         doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/" + Id);
         doadNovo.Sexo = "Masculino";
 
-        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, doadNovo.Bairro);
-        await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 2, doadNovo.Cidade);
+        //await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, doadNovo.Bairro);
+        //await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 2, doadNovo.Cidade);
     }
 
     private async Task Submit()
@@ -215,9 +270,9 @@
                 LogradouroCep endereco = await Http.GetFromJsonAsync<LogradouroCep>
     ("https://viacep.com.br/ws/" + doadNovo.Cep + "/json");
 
-                await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 0, endereco.Logradouro);
-                await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 1, endereco.Bairro);
-                await JsRuntime.InvokeVoidAsync("PassarValorClass", "blazored-typeahead__input", 2, endereco.Localidade);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "cep", 0, endereco.Logradouro);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "cep", 1, endereco.Bairro);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "cep", 2, endereco.Localidade);
 
                 doadNovo.Endereco = endereco.Logradouro;
                 doadNovo.Bairro = endereco.Bairro;
@@ -230,19 +285,19 @@
         }
     }
 
-    private async Task<IEnumerable<string>> BuscarEndereco(string nome)
+    private async Task BuscarEndereco(string nome)
     {
-        return await Task.FromResult(enderecos.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+        list = await Task.FromResult(enderecos.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
     }
 
-    private async Task<IEnumerable<string>> BuscarBairro(string nome)
+    private async Task BuscarBairro(string nome)
     {
-        return await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+        list = await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
     }
 
-    private async Task<IEnumerable<string>> BuscarCidade(string nome)
+    private async Task BuscarCidade(string nome)
     {
-        return await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+        list = await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
     }
 
     void Verificacoes()
@@ -304,7 +359,63 @@
         {
             erros.Add("Digite um email válido");
         }
+    }
 
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            if (tipoBusca == "Bairro")
+            {
+                await BuscarBairro(search);
+            }
+            else if (tipoBusca == "Endereço")
+            {
+                await BuscarEndereco(search);
+            }
+            else
+            {
+                await BuscarCidade(search);
+            }
+        }
+    }
+
+    void Selecionar(string item)
+    {
+        if (tipoBusca == "Bairro")
+        {
+            doadNovo.Bairro = item;
+        }
+        else if (tipoBusca == "Endereço")
+        {
+            doadNovo.Endereco = item;
+        }
+        else
+        {
+            doadNovo.Cidade = item;
+        }
+
+        showModal = false;
+        search = "";
+    }
+
+    void AbrirModal(string tipo)
+    {
+        tipoBusca = tipo;
+        showModal = true;
+
+        if (tipo == "Bairro")
+        {
+            list = bairros;
+        }
+        else if (tipo == "Endereço")
+        {
+            list = enderecos;
+        }
+        else
+        {
+            list = cidades;
+        }
     }
 
 }
