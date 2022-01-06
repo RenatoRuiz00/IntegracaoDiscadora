@@ -9,5 +9,6 @@ namespace Operacao.Server.Interfaces
         public Task Inserir(Contribuinte contribuinte);
         public Task<int> UltimoId();
         public Task AtualizaRetorno(int id,DateTime dt);
+        public Task<Contribuinte> BuscarPorId(int id);
     }
 }

@@ -5,8 +5,9 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
-@using Blazored.Typeahead
 @inject IJSRuntime JsRuntime
+
+<a href="javascript:history.back()">Voltar</a>
 
 @if (erros != null && erros.Count > 0)
 {
@@ -192,12 +193,12 @@
 
 <style>
     /*.blazored-typeahead__input {
-        height: calc(1.5em + .75rem + 2px);
-    }
+            height: calc(1.5em + .75rem + 2px);
+        }
 
-    .blazored-typeahead__controls {
-        height: calc(1.5em + .75rem + 2px);
-    }*/
+        .blazored-typeahead__controls {
+            height: calc(1.5em + .75rem + 2px);
+        }*/
 
     .modal {
         display: block !important; /* I added this to see the modal, you don't need this */

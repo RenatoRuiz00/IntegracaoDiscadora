@@ -22,10 +22,10 @@ namespace Operacao.Server.Controllers
         }
 
         // GET: api/<ContribuinteController>
-        [HttpGet]
-        public IEnumerable<string> Get()
+        [HttpGet("{id}")]
+        public async Task<Contribuinte> Get(int id)
         {
-            return new string[] { "value1", "value2" };
+            return await _contribuinteService.BuscarPorId(id);
         }
 
         // GET api/<ContribuinteController>/5
@@ -44,8 +44,9 @@ namespace Operacao.Server.Controllers
 
         // PUT api/<ContribuinteController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] string value)
+        public void Put(int id, [FromBody] Contribuinte contribuinte)
         {
+
         }
 
         [HttpGet("atualizaRetorno/{id}/{dt}")]

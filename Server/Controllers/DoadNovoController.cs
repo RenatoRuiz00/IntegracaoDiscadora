@@ -32,7 +32,7 @@ namespace Operacao.Server.Controllers
         [HttpGet("{id}")]
         public async Task<DoadNovo> GetAsync(int id)
         {
-            return await _doadNovoService.BuscarPorId(id);
+            return await _doadNovoService.BuscarPorId2(id);
         }
 
         [HttpGet("buscarporid2/{id}")]

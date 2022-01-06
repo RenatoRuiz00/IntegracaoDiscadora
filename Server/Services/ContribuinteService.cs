@@ -3,6 +3,7 @@ using MySql.Data.MySqlClient;
 using Operacao.Server.Data;
 using Operacao.Server.Interfaces;
 using Operacao.Shared.Models;
+using Operacao.Shared.Utils;
 using System;
 using System.Collections.Generic;
 using System.Data;
@@ -31,6 +32,50 @@ namespace Operacao.Server.Services
 
             command.ExecuteNonQuery();
             command.Connection.Close();
+        }
+
+        public async Task<Contribuinte> BuscarPorId(int id)
+        {
+            Contribuinte contribuinte = new Contribuinte();
+
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "select matricula,strTelefone,nome,setor,dtNascimento," +
+                "strEndereco,numero,complemento,strBairro,strCidade,Ponto_Ref,strCategoria," +
+                "celular1,celular2,cpf,data_retorno,email,ObsOperadoras,obs_mensageiro," +
+                "ObsCoordenacao,lgpd from clientes where matricula= @Id";
+            command.CommandType = CommandType.Text;
+            command.Parameters.Add(new MySqlParameter("@Id", id));
+
+            var result = command.ExecuteReader();
+
+            while (result.Read())
+            {
+                contribuinte.Id = Convert.ToInt32(result["matricula"]);
+                contribuinte.Telefone = result["strTelefone"].ToString();
+                contribuinte.Nome = result["nome"].ToString();
+                contribuinte.Setor = result["setor"].ToString();
+                contribuinte.DtNascimento = Converter.ToDateTime(result["dtNascimento"]);
+                contribuinte.Endereco = result["strEndereco"].ToString();
+                contribuinte.Numero = result["numero"].ToString();
+                contribuinte.Complemento = result["complemento"].ToString();
+                contribuinte.Bairro = result["strBairro"].ToString();
+                contribuinte.Cidade = result["strCidade"].ToString();
+                contribuinte.PontoReferencia = result["Ponto_Ref"].ToString();
+                contribuinte.Categoria = result["strCategoria"].ToString();
+                contribuinte.Celular1 = result["celular1"].ToString();
+                contribuinte.Celular2 = result["celular2"].ToString();
+                contribuinte.Cpf = result["cpf"].ToString();
+                contribuinte.DtRetorno = Convert.ToDateTime(result["data_retorno"]);
+                contribuinte.Email = result["email"].ToString();
+                contribuinte.ObsCoordenacao = result["ObsCoordenacao"].ToString();
+                contribuinte.ObsOperacao = result["ObsOperadoras"].ToString();
+                contribuinte.ObsMensageiros = result["obs_mensageiro"].ToString();
+                contribuinte.Lgpd = result["lgpd"].ToString();
+            }
+
+            command.Connection.Close();
+            return contribuinte;
         }
 
         public async Task Inserir(Contribuinte contribuinte)

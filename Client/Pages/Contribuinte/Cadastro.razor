@@ -1,4 +1,12 @@
 ﻿@page "/contribuinte/cadastro/{id}"
+@using Operacao.Shared.Models
+@using Operacao.Shared.Utils
+@inject HttpClient Http
+@inject NavigationManager NavManager
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@using System.Text.Json.Serialization;
+@using System.Text.Json;
+@inject IJSRuntime JsRuntime
 
 <h3>Cadastro - Contribuinte</h3>
 <hr />
@@ -9,11 +17,344 @@
         Não foi definido um código
     </div>
 }
+@if (contribuinte != null)
+{
+    <form method="post" @onsubmit="@Submit" autocomplete="off">
+        <div class="form-row">
+            <div class="col-md-2">
+                <label>Matrícula</label>
+                <input type="text" class="form-control" readonly @bind-value="@contribuinte.Id" />
+            </div>
+            <div class="col-md-2">
+                <label>Telefone</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Telefone" />
+            </div>
+            <div class="col-md-4">
+                <label>Nome</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Nome" />
+            </div>
+            <div class="col-md-1">
+                <label>Setor</label>
+                <input type="text" class="form-control" readonly @bind-value="@contribuinte.Setor" />
+            </div>
+            <div class="col-md-2">
+                <label>Data Nasc.</label>
+                <input type="date" class="form-control" @bind-value="@contribuinte.DtNascimento" />
+            </div>
 
+            <div class="col"><button type="submit" class="btn btn-success" style="margin-top:30px;">Salvar</button></div>
+        </div>
+
+        <div class="form-row">
+            <div class="col">
+                <label>Endereço</label>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control cep" @bind-value="@contribuinte.Endereco">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Endereço"))">Buscar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col-md-1">
+                <label>Núm.</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Numero" />
+            </div>
+
+            <div class="col">
+                <label>Complemento</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Complemento" />
+            </div>
+
+            <div class="col">
+                <label>CEP</label>
+                <input type="text" class="form-control" id="cep" name="cep" minlength="8" maxlength="8" @bind-value="@contribuinte.Cep" @onblur="BuscarCep" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="col">
+                <label>Bairro</label>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control cep" @bind-value="@contribuinte.Bairro" id="bairro">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Bairro"))">Buscar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <label>Cidade</label>
+                <div class="input-group mb-3">
+                    <input type="text" class="form-control cep" @bind-value="@contribuinte.Cidade" id="cidade">
+                    <div class="input-group-append">
+                        <button class="btn btn-outline-secondary" type="button" @onclick="@(() => AbrirModal("Cidade"))">Buscar</button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="col">
+                <label>Ponto Ref.</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.PontoReferencia" />
+            </div>
+        </div>
+
+
+        <div class="form-row">
+            <div class="col">
+                <label>Categoria</label>
+                <select class="form-control">
+                </select>
+            </div>
+
+            <div class="col">
+                <label>Celular 1</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Celular1" />
+            </div>
+
+            <div class="col">
+                <label>Celular 2</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Celular2" />
+            </div>
+
+            <div class="col">
+                <label>CPF</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Cpf" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="col-md-2">
+                <label>Data Retorno</label>
+                <input type="date" class="form-control" @bind-value="@contribuinte.DtRetorno" />
+            </div>
+
+            <div class="col">
+                <label>Email</label>
+                <input type="text" class="form-control" @bind-value="@contribuinte.Email" />
+            </div>
+        </div>
+
+        <div class="form-row">
+            <div class="col">
+                <label>Obs. Operação</label>
+                <textarea class="form-control" rows="2" name="obsCoord" @bind="@contribuinte.ObsOperacao" @bind:event="oninput"></textarea>
+            </div>
+            <div class="col">
+                <label>Obs. Mensageiros</label>
+                <textarea class="form-control" rows="2" name="obsOper" @bind="@contribuinte.ObsMensageiros" @bind:event="oninput"></textarea>
+            </div>
+        </div>
+
+    </form>
+}
+
+@if (showModal)
+{
+    <div class="modal fade show" tabindex="-1" role="dialog" style="display: block;" data-backdrop="false">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Consulta - @tipoBusca</h5>
+                    <button type="button" class="close" aria-label="Close" @onclick="()=> showModal=false">
+                        <span aria-hidden="true">&times;</span>
+                    </button>
+                </div>
+                <div class="modal-body">
+                    <div class="input-group mb-3">
+                        <input type="text" class="form-control" @bind-value="@search" @onkeyup="Enter">
+                        <div class="input-group-append">
+                            @if (tipoBusca == "Bairro")
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarBairro(search)">Buscar</button>
+
+                            }
+                            else if (tipoBusca == "Endereço")
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarEndereco(search)">Buscar</button>
+                            }
+                            else
+                            {
+                                <button class="btn btn-outline-secondary" type="button" @onclick="()=> BuscarCidade(search)">Buscar</button>
+                            }
+
+                        </div>
+                    </div>
+
+                    <table class="table">
+                        <thead>
+                            <tr>
+                                <th>Descrição</th>
+                                <th></th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach (string item in list)
+                            {
+                                <tr>
+                                    <td>@item</td>
+                                    <td><button class="btn btn-primary" @onclick="()=> Selecionar(item)"><span class="oi oi-check" aria-hidden="true"></span></button></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+    </div>
+    <div class="modal-backdrop fade show"></div>
+}
+
+<style>
+    .modal {
+        display: block !important; /* I added this to see the modal, you don't need this */
+    }
+
+    /* Important part */
+    .modal-dialog {
+        overflow-y: initial !important
+    }
+
+    .modal-body {
+        height: 500px;
+        overflow-y: auto;
+    }
+</style>
 
 
 @code {
     [Parameter]
     public string Id { get; set; }
+
+    private Contribuinte contribuinte;
+    private Funcionario usuario;
+
+    private List<string> cidades = new List<string>();
+    private List<string> bairros = new List<string>();
+    private List<string> enderecos = new List<string>();
+
+    private List<string> list = new List<string>();
+
+    bool showModal = false;
+    string search = "";
+    string tipoBusca = "";
+
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+
+        if (usuario == null || usuario.Id == 0)
+        {
+            NavManager.NavigateTo("/");
+        }
+
+        contribuinte = await Http.GetFromJsonAsync<Contribuinte>("api/contribuinte/" + Id);
+        enderecos = await Http.GetFromJsonAsync<List<string>>("api/endereco/ruas");
+        bairros = await Http.GetFromJsonAsync<List<string>>("api/endereco/bairros");
+        cidades = await Http.GetFromJsonAsync<List<string>>("api/endereco/cidades");
+    }
+
+    async Task Submit()
+    {
+
+    }
+
+    private async Task BuscarEndereco(string nome)
+    {
+        list = await Task.FromResult(enderecos.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    private async Task BuscarBairro(string nome)
+    {
+        list = await Task.FromResult(bairros.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    private async Task BuscarCidade(string nome)
+    {
+        list = await Task.FromResult(cidades.Where(x => x.ToUpper().Contains(nome.ToUpper())).ToList());
+    }
+
+    public async Task Enter(KeyboardEventArgs e)
+    {
+        if (e.Code == "Enter" || e.Code == "NumpadEnter")
+        {
+            if (tipoBusca == "Bairro")
+            {
+                await BuscarBairro(search);
+            }
+            else if (tipoBusca == "Endereço")
+            {
+                await BuscarEndereco(search);
+            }
+            else
+            {
+                await BuscarCidade(search);
+            }
+        }
+    }
+
+    void Selecionar(string item)
+    {
+        if (tipoBusca == "Bairro")
+        {
+            contribuinte.Bairro = item;
+        }
+        else if (tipoBusca == "Endereço")
+        {
+            contribuinte.Endereco = item;
+        }
+        else
+        {
+            contribuinte.Cidade = item;
+        }
+
+        showModal = false;
+        search = "";
+    }
+
+    void AbrirModal(string tipo)
+    {
+        tipoBusca = tipo;
+        showModal = true;
+
+        if (tipo == "Bairro")
+        {
+            list = bairros;
+        }
+        else if (tipo == "Endereço")
+        {
+            list = enderecos;
+        }
+        else
+        {
+            list = cidades;
+        }
+    }
+
+    private async Task BuscarCep()
+    {
+        if (!string.IsNullOrEmpty(contribuinte.Cep))
+        {
+            try
+            {
+                LogradouroCep endereco = await Http.GetFromJsonAsync<LogradouroCep>
+    ("https://viacep.com.br/ws/" + contribuinte.Cep + "/json");
+
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "cep", 0, endereco.Logradouro);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "cep", 1, endereco.Bairro);
+                await JsRuntime.InvokeVoidAsync("PassarValorClass", "cep", 2, endereco.Localidade);
+
+                contribuinte.Endereco = endereco.Logradouro;
+                contribuinte.Bairro = endereco.Bairro;
+                contribuinte.Cidade = endereco.Localidade;
+            }
+            catch
+            {
+                await JsRuntime.InvokeVoidAsync("alert", "Não foi possível consultar o endereço, verifique se você inserir um CEP válido!"); // Alert
+            }
+        }
+    }
+
 
 }
