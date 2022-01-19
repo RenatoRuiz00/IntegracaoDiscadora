@@ -44,15 +44,39 @@ namespace Operacao.Server.Controllers
 
         // PUT api/<ContribuinteController>/5
         [HttpPut("{id}")]
-        public void Put(int id, [FromBody] Contribuinte contribuinte)
+        public async Task PutAsync(int id, [FromBody] Contribuinte contribuinte)
         {
-
+            await _contribuinteService.Update(contribuinte);
         }
 
         [HttpGet("atualizaRetorno/{id}/{dt}")]
         public async Task AtualizaRetorno(int id, DateTime dt)
         {
-            await _contribuinteService.AtualizaRetorno(id,dt);
+            await _contribuinteService.AtualizaRetorno(id, dt);
+        }
+
+        [HttpGet("nc/{id}/{motivo}/{idOperadora}")]
+        public async Task AtualizaRetorno(int id, string motivo, int idOperadora)
+        {
+            await _contribuinteService.NC(id, motivo, idOperadora);
+        }
+
+        [HttpGet("limparAgenda/{id}")]
+        public async Task LimparAgenda(int id)
+        {
+            await _contribuinteService.LimparAgenda(id);
+        }
+
+        [HttpGet("agendar/{id}/{dt}")]
+        public async Task Agendar(int id, DateTime dt)
+        {
+            await _contribuinteService.Agendar(id, dt);
+        }
+
+        [HttpGet("cancelar/{id}/{motivo}")]
+        public async Task Cancelar(int id, string motivo)
+        {
+            await _contribuinteService.Cancelar(id, motivo);
         }
 
         // DELETE api/<ContribuinteController>/5

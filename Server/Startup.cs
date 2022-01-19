@@ -55,6 +55,8 @@ namespace Operacao.Server
             services.AddScoped<ContratoService>();
             services.AddScoped<ParcelaService>();
             services.AddScoped<BoletoService>();
+            services.AddScoped<AcaoContribuinteService>();
+            services.AddScoped<MotivoNCService>();
 
             services.AddBlazoredSessionStorage();
         }

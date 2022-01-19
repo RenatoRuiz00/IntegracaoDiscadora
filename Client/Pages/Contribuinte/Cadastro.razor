@@ -4,12 +4,7 @@
 @inject HttpClient Http
 @inject NavigationManager NavManager
 @inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
-@using System.Text.Json.Serialization;
-@using System.Text.Json;
 @inject IJSRuntime JsRuntime
-
-<h3>Cadastro - Contribuinte</h3>
-<hr />
 
 @if (string.IsNullOrEmpty(Id))
 {
@@ -17,9 +12,36 @@
         Não foi definido um código
     </div>
 }
+
+@if (erros.Count > 0)
+{
+    foreach (string erro in erros)
+    {
+        <div class="alert alert-danger" role="alert">
+            @erro
+        </div>
+    }
+}
+
 @if (contribuinte != null)
 {
     <form method="post" @onsubmit="@Submit" autocomplete="off">
+        <div class="form-row">
+            <div class="col-md-3 d-lg-flex align-items-lg-center">
+                <label style="margin-right:10px;">Ação</label>
+                <select class="form-control" style="width:200px;" @bind="@acao">
+                    <option selected>Agenda</option>
+                    <option>Contribuiu</option>
+                    <option>Boleto</option>
+                    <option>Não Contribuiu (NC)</option>
+                    <option>UCR</option>
+                </select>
+            </div>
+
+            <div class="col-1"><button type="submit" class="btn btn-success">Salvar</button></div>
+        </div>
+        <hr />
+
         <div class="form-row">
             <div class="col-md-2">
                 <label>Matrícula</label>
@@ -27,11 +49,11 @@
             </div>
             <div class="col-md-2">
                 <label>Telefone</label>
-                <input type="text" class="form-control" @bind-value="@contribuinte.Telefone" />
+                <input type="text" class="form-control" @bind-value="@contribuinte.Telefone" min="8" max="9" required onkeypress="return event.charCode >= 48 && event.charCode <= 57" />
             </div>
             <div class="col-md-4">
                 <label>Nome</label>
-                <input type="text" class="form-control" @bind-value="@contribuinte.Nome" />
+                <input type="text" class="form-control" @bind-value="@contribuinte.Nome" required max="200" />
             </div>
             <div class="col-md-1">
                 <label>Setor</label>
@@ -41,8 +63,6 @@
                 <label>Data Nasc.</label>
                 <input type="date" class="form-control" @bind-value="@contribuinte.DtNascimento" />
             </div>
-
-            <div class="col"><button type="submit" class="btn btn-success" style="margin-top:30px;">Salvar</button></div>
         </div>
 
         <div class="form-row">
@@ -58,7 +78,7 @@
 
             <div class="col-md-1">
                 <label>Núm.</label>
-                <input type="text" class="form-control" @bind-value="@contribuinte.Numero" />
+                <input type="text" class="form-control" @bind-value="@contribuinte.Numero" onkeypress="return event.charCode >= 48 && event.charCode <= 57" maxlength="10" />
             </div>
 
             <div class="col">
@@ -68,7 +88,7 @@
 
             <div class="col">
                 <label>CEP</label>
-                <input type="text" class="form-control" id="cep" name="cep" minlength="8" maxlength="8" @bind-value="@contribuinte.Cep" @onblur="BuscarCep" />
+                <input type="text" class="form-control" id="cep" name="cep" minlength="8" maxlength="8" @bind-value="@contribuinte.Cep" @onblur="BuscarCep" onkeypress="return event.charCode >= 48 && event.charCode <= 57" />
             </div>
         </div>
 
@@ -99,7 +119,6 @@
             </div>
         </div>
 
-
         <div class="form-row">
             <div class="col">
                 <label>Categoria</label>
@@ -119,33 +138,37 @@
 
             <div class="col">
                 <label>CPF</label>
-                <input type="text" class="form-control" @bind-value="@contribuinte.Cpf" />
+                <input type="text" class="form-control" @bind-value="@contribuinte.Cpf" onkeypress="return event.charCode >= 48 && event.charCode <= 57" />
             </div>
         </div>
 
         <div class="form-row">
             <div class="col-md-2">
                 <label>Data Retorno</label>
-                <input type="date" class="form-control" @bind-value="@contribuinte.DtRetorno" />
+                <input type="date" class="form-control" @bind-value="@contribuinte.DtRetorno" required />
             </div>
 
             <div class="col">
                 <label>Email</label>
-                <input type="text" class="form-control" @bind-value="@contribuinte.Email" />
+                <input type="text" class="form-control" @bind-value="@contribuinte.Email" maxlength="50" />
             </div>
         </div>
 
         <div class="form-row">
             <div class="col">
                 <label>Obs. Operação</label>
-                <textarea class="form-control" rows="2" name="obsCoord" @bind="@contribuinte.ObsOperacao" @bind:event="oninput"></textarea>
+                <textarea class="form-control" rows="2" name="obsCoord" @bind="@contribuinte.ObsOperacao" @bind:event="oninput" maxlength="255"></textarea>
             </div>
             <div class="col">
                 <label>Obs. Mensageiros</label>
-                <textarea class="form-control" rows="2" name="obsOper" @bind="@contribuinte.ObsMensageiros" @bind:event="oninput"></textarea>
+                <textarea class="form-control" rows="2" name="obsOper" @bind="@contribuinte.ObsMensageiros" @bind:event="oninput" maxlength="255"></textarea>
+            </div>
+
+            <div class="col">
+                <label style="color:red;">LGPD</label><br />
+                <label style="color:red;">@contribuinte.Lgpd</label>
             </div>
         </div>
-
     </form>
 }
 
@@ -219,6 +242,10 @@
         height: 500px;
         overflow-y: auto;
     }
+
+    .form-row {
+        margin-top: 5px;
+    }
 </style>
 
 
@@ -238,6 +265,9 @@
     bool showModal = false;
     string search = "";
     string tipoBusca = "";
+    string acao = "Agenda";
+
+    List<string> erros = new List<string>();
 
 
     protected override async Task OnInitializedAsync()
@@ -257,7 +287,46 @@
 
     async Task Submit()
     {
+        erros.Clear();
 
+        switch (acao)
+        {
+            case "Agenda":
+                await Http.PutAsJsonAsync<Contribuinte>("api/contribuinte/", contribuinte);
+                NavManager.NavigateTo("/contribuinte/agenda/" + Id + "/" + contribuinte.Telefone);
+                break;
+            case "Não Contribuiu (NC)":
+                NavManager.NavigateTo("/contribuinte/agenda/" + Id + "/" + contribuinte.Telefone);
+                break;
+            case "Contribuiu":
+                CamposObrigatorios();
+                if (erros.Count == 0)
+                {
+                    await Http.PutAsJsonAsync<Contribuinte>("api/contribuinte/", contribuinte);
+                    NavManager.NavigateTo("/doacao/index/" + Id + "/false/Contribuinte/" + contribuinte.Categoria);
+                }
+                break;
+            case "Boleto":
+                CamposObrigatorios();
+                VerificarBoleto();
+                if (erros.Count == 0)
+                {
+                    await Http.PutAsJsonAsync<Contribuinte>("api/contribuinte/", contribuinte);
+                    NavManager.NavigateTo("/doacao/index/" + Id + "/true/Contribuinte/" + contribuinte.Categoria);
+                }
+                break;
+            case "UCR":
+                CamposObrigatorios();
+                if (erros.Count == 0)
+                {
+                    await Http.PutAsJsonAsync<Contribuinte>("api/contribuinte/", contribuinte);
+                    NavManager.NavigateTo("/doacao/index/" + Id + "/false/Ucr/" + contribuinte.Categoria);
+                }
+                break;
+            default:
+
+                break;
+        }
     }
 
     private async Task BuscarEndereco(string nome)
@@ -356,5 +425,71 @@
         }
     }
 
+    void CamposObrigatorios()
+    {
+        if (string.IsNullOrEmpty(contribuinte.Endereco))
+        {
+            erros.Add("Insira o endereço!");
+        }
+        if (string.IsNullOrEmpty(contribuinte.Numero))
+        {
+            erros.Add("Insira o número!");
+        }
+        if (string.IsNullOrEmpty(contribuinte.Cidade))
+        {
+            erros.Add("Insira a cidade!");
+        }
+        if (string.IsNullOrEmpty(contribuinte.Bairro))
+        {
+            erros.Add("Insira o bairro!");
+        }
+        if (string.IsNullOrEmpty(contribuinte.Categoria))
+        {
+            erros.Add("Insira a categoria!");
+        }
+    }
+
+    void VerificarBoleto()
+    {
+        //Verifico se o nome possui mais de 50 caracteres
+        if (contribuinte.Nome.Length > 50)
+        {
+            erros.Add("O nome não pode ter mais de 50 caracteres!");
+        }
+
+        if (contribuinte.Nome.IndexOf(' ') < 0)
+        {
+            erros.Add("Digite o nome completo!");
+        }
+
+        //Verifico se é um CNPJ ou CPF válido
+        if (!string.IsNullOrEmpty(contribuinte.Cpf))
+        {
+            if (contribuinte.Cpf.Length == 14)
+            {
+                if (Validacoes.IsCnpj(contribuinte.Cpf) == false)
+                {
+                    erros.Add("Digite um CNPJ válido");
+                }
+            }
+            else
+            {
+                if (Validacoes.IsCpf(contribuinte.Cpf) == false)
+                {
+                    erros.Add("Digite um CPF válido");
+                }
+            }
+        }
+        else
+        {
+            erros.Add("Insira o CPF ou CNPJ");
+        }
+
+        //Verifico se é um email válido
+        if (Validacoes.IsValidEmail(contribuinte.Email) == false)
+        {
+            erros.Add("Digite um email válido");
+        }
+    }
 
 }

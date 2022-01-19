@@ -2,6 +2,6 @@
     document.getElementsByClassName(classe)[index].value = valor;
 };
 
-function AlertaPersonalizado() {
-    alert('Teste de alerta personalizado!');
+function AlertaPersonalizado(mensagem) {
+    alert(mensagem);
 }

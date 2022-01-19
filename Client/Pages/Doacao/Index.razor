@@ -1,4 +1,5 @@
 ﻿@page "/doacao/index/{id}/{boleto}"
+@page "/doacao/index/{id}/{boleto}/{tipo}/{categoria}"
 @using Operacao.Shared.Models
 @using Operacao.Shared.Utils
 @using Operacao.Shared.Models.PagSeguro
@@ -80,6 +81,10 @@
     public string Id { get; set; }
     [Parameter]
     public string Boleto { get; set; }
+    [Parameter]
+    public string Tipo { get; set; }
+    [Parameter]
+    public string Categoria { get; set; }
 
     private Funcionario usuario;
     private Parcela parcela = new Parcela();
@@ -111,8 +116,8 @@
             await BuscarCredenciaisBoleto();
         }
 
-        parcela.DtVencimento = Converter.TimeZone(DateTime.UtcNow);
-        categorias = await Http.GetFromJsonAsync<List<Categoria>>("api/categoria/");
+        parcela.DtVencimento = Converter.TimeZone(DateTime.UtcNow); Alterações tela contribuinte
+         categorias = await Http.GetFromJsonAsync<List<Categoria>>("api/categoria/");
         doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/buscarporid2/" + Id);
     }
 
@@ -131,9 +136,19 @@
             //return;
         }
 
-        await InserirCliente();
-        await DeletarDoadNovo();
-        await InserirAcaoDoadNovo();
+        if (string.IsNullOrEmpty(Tipo))
+        {
+            await InserirCliente();
+            await DeletarDoadNovo();
+            await InserirAcaoDoadNovo();
+        }
+        else
+        {
+            matricula = Convert.ToInt32(Id);
+            await Http.GetAsync("api/limparAgenda/" + matricula);
+            await InserirAcaoContribuinte();
+        }
+
         await GerarParcelas();
 
         NavManager.NavigateTo("/doacao/consulta/" + matricula);
@@ -151,6 +166,22 @@
         };
 
         await Http.PostAsJsonAsync<AcaoDoadNovo>("api/AcaoDoadNovo", acaoDoadNovo);
+    }
+
+    private async Task InserirAcaoContribuinte()
+    {
+        AcaoContribuinte acao = new AcaoContribuinte {
+            FuncionarioId = usuario.Id,
+            Valor = parcela.Valor,
+            Identificacao = 1,
+            Descricao = "C-APROVEITADO",
+            Dt = Converter.TimeZone(DateTime.Now),
+            Hora = Converter.TimeZone(DateTime.Now),
+            PessoaId = matricula
+
+        };
+
+        await Http.PostAsJsonAsync<AcaoContribuinte>("api/AcaoContribuinte", acao);
     }
 
     private async Task InserirCliente()
@@ -327,9 +358,6 @@
                 erros.Add(erro.Message);
             }
         }
-
-
-
         //return;
     }
 

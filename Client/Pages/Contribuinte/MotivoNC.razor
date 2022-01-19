@@ -1,0 +1,104 @@
+﻿@page "/contribuinte/motivoNC/{id}"
+@using Operacao.Shared.Models;
+@using Operacao.Shared.Utils;
+@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject HttpClient Http
+@inject NavigationManager NavManager
+
+<h3>Motivo NC</h3>
+<hr />
+
+@if (erros.Count > 0)
+{
+    foreach (string erro in erros)
+    {
+        <div class="alert alert-danger" role="alert">
+            @erro
+        </div>
+    }
+}
+
+<div class="card">
+    <div class="card-body">
+        <form @onsubmit="Submit">
+            <div class="form-row">
+                <div class="col">
+                    <label>Motivo</label>
+                    <select class="form-control" @bind="@motivo">
+                        <option selected></option>
+                        @foreach (Operacao.Shared.Models.MotivoNC motivo in motivos)
+                        {
+                            <option>@motivo.Descricao</option>
+                        }
+                    </select>
+                </div>
+                <div class="col">
+                    <label>Data Retorno</label>
+                    <input class="form-control" type="date" @bind-value="dt" required />
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="col"><button class="btn btn-primary float-right" type="button">Salvar</button></div>
+            </div>
+        </form>
+    </div>
+</div>
+
+@code {
+    [Parameter]
+    public int Id { get; set; }
+
+    List<Operacao.Shared.Models.MotivoNC> motivos = new List<Operacao.Shared.Models.MotivoNC>();
+    private Funcionario usuario;
+    List<string> erros = new List<string>();
+    string motivo;
+    DateTime dt;
+
+    protected override async Task OnInitializedAsync()
+    {
+        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        motivos = await Http.GetFromJsonAsync<List<Operacao.Shared.Models.MotivoNC>>("api/motivoNC/");
+    }
+
+    async Task Submit()
+    {
+        erros.Clear();
+
+        if (string.IsNullOrEmpty(motivo))
+        {
+            erros.Add("Selecione o motivo !");
+        }
+        if (dt <= Converter.TimeZone(DateTime.Now))
+        {
+            erros.Add("A data de retorno tem que ser maior do que hoje!");
+        }
+
+        await Http.GetAsync("api/limparAgenda/" + Id);
+
+        if (motivo != "Cadastro para excluir")
+        {
+            await Http.GetAsync("api/contribuinte/atualizaRetorno/" + Id + "/" + dt.ToString("yyyy-MM-dd"));
+            await Http.GetAsync("api/contribuinte/nc/" + Id + "/" + motivo + "/" + usuario.Id);
+
+        }
+        else
+        {
+            await Http.GetAsync("api/contribuinte/cancelar/" + Id + "/" + motivo);
+        }
+
+        AcaoContribuinte acao = new AcaoContribuinte
+        {
+            PessoaId = Id,
+            FuncionarioId = usuario.Id,
+            Valor = 0,
+            Identificacao = 3,
+            Descricao = "NC - " + motivo,
+            Dt = Converter.TimeZone(DateTime.Now),
+            Hora = Converter.TimeZone(DateTime.Now),
+
+        };
+        await Http.PostAsJsonAsync<AcaoContribuinte>("api/AcaoContribuinte", acao);
+        NavManager.NavigateTo("/contribuinte/cadastro/0");
+    }
+
+}

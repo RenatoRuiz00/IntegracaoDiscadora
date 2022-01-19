@@ -21,6 +21,21 @@ namespace Operacao.Server.Services
             _context = context;
         }
 
+        public async Task Agendar(int id, DateTime dt)
+        {
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "UPDATE clientes SET dataAgenda=@Dt,horarioAgenda=@Hora " +
+                "WHERE matricula=@Id";
+            command.CommandType = CommandType.Text;
+            command.Parameters.Add(new MySqlParameter("@Dt", dt.Date));
+            command.Parameters.Add(new MySqlParameter("@Hora", dt.TimeOfDay));
+            command.Parameters.Add(new MySqlParameter("@Id", id));
+
+            command.ExecuteNonQuery();
+            command.Connection.Close();
+        }
+
         public async Task AtualizaRetorno(int id, DateTime dt)
         {
             var command = _context.Database.GetDbConnection().CreateCommand();
@@ -78,6 +93,20 @@ namespace Operacao.Server.Services
             return contribuinte;
         }
 
+        public async Task Cancelar(int id, string motivo)
+        {
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "update clientes set cancelado ='I'," +
+                "motivo_canc=@Motivo,dt_canc=Date(Now()) WHERE matricula=@Id";
+            command.CommandType = CommandType.Text;
+            command.Parameters.Add(new MySqlParameter("@Id", id));
+            command.Parameters.Add(new MySqlParameter("@Motivo", motivo));
+
+            command.ExecuteNonQuery();
+            command.Connection.Close();
+        }
+
         public async Task Inserir(Contribuinte contribuinte)
         {
             var command = _context.Database.GetDbConnection().CreateCommand();
@@ -116,6 +145,34 @@ namespace Operacao.Server.Services
             command.Connection.Close();
         }
 
+        public async Task LimparAgenda(int id)
+        {
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "update clientes set DataAgenda=null,HorarioAgenda=null " +
+                "where matricula=@Id ";
+            command.CommandType = CommandType.Text;
+            command.Parameters.Add(new MySqlParameter("@Id", id));
+
+            command.ExecuteNonQuery();
+            command.Connection.Close();
+        }
+
+        public async Task NC(int id, string motivo, int idFuncionario)
+        {
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "insert into tbl_nc (matricula,data,id_operadora,motivo,hora) values " +
+                "(@Id,Date(Now()),@IdOperadora,@Motivo,Time(Now()))";
+            command.CommandType = CommandType.Text;
+            command.Parameters.Add(new MySqlParameter("@Id", id));
+            command.Parameters.Add(new MySqlParameter("@IdOperadora", idFuncionario));
+            command.Parameters.Add(new MySqlParameter("@Motivo", motivo));
+
+            command.ExecuteNonQuery();
+            command.Connection.Close();
+        }
+
         public async Task<int> UltimoId()
         {
             int id = 0;
@@ -134,6 +191,39 @@ namespace Operacao.Server.Services
 
             command.Connection.Close();
             return id;
+        }
+
+        public async Task Update(Contribuinte contribuinte)
+        {
+            var command = _context.Database.GetDbConnection().CreateCommand();
+            command.Connection.Open();
+            command.CommandText = "update clientes set strTelefone=@Telefone," +
+                "nome=@Nome,dtNascimento=@DtNasc,strEndereco=@Endereco,numero=@Numero," +
+                "complemento=@Complemento,strBairro=@Bairro,strCidade=@Cidade," +
+                "Ponto_Ref=@PontoRef,strCategoria=@Categoria,celular1=@Celular1,celular2=@Celular2," +
+                "cpf=@Cpf,data_retorno=@DtRetorno,email=@Email,ObsOperadoras=@ObsOper," +
+                "obs_mensageiro=@ObsMensageiro where matricula=@Id";
+            command.CommandType = CommandType.Text;
+
+            command.Parameters.Add(new MySqlParameter("@Id", contribuinte.Id));
+            command.Parameters.Add(new MySqlParameter("@Telefone", contribuinte.Telefone));
+            command.Parameters.Add(new MySqlParameter("@Nome", contribuinte.Nome));
+            command.Parameters.Add(new MySqlParameter("@DtNasc", contribuinte.DtNascimento));
+            command.Parameters.Add(new MySqlParameter("@Endereco", contribuinte.DtNascimento));
+            command.Parameters.Add(new MySqlParameter("@Numero", contribuinte.DtNascimento));
+            command.Parameters.Add(new MySqlParameter("@Complemento", contribuinte.DtNascimento));
+            command.Parameters.Add(new MySqlParameter("@Bairro", contribuinte.Bairro));
+            command.Parameters.Add(new MySqlParameter("@Cidade", contribuinte.Cidade));
+            command.Parameters.Add(new MySqlParameter("@PontoRef", contribuinte.PontoReferencia));
+            command.Parameters.Add(new MySqlParameter("@Categoria", contribuinte.Categoria));
+            command.Parameters.Add(new MySqlParameter("@Celular1", contribuinte.Celular1));
+            command.Parameters.Add(new MySqlParameter("@Celular2", contribuinte.Celular2));
+            command.Parameters.Add(new MySqlParameter("@Cpf", contribuinte.Cpf));
+            command.Parameters.Add(new MySqlParameter("@ObsOper", contribuinte.ObsOperacao));
+            command.Parameters.Add(new MySqlParameter("@ObsMensageiro", contribuinte.ObsMensageiros));
+
+            command.ExecuteNonQuery();
+            command.Connection.Close();
         }
     }
 }
