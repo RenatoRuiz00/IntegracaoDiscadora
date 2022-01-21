@@ -1,7 +1,7 @@
 ﻿@page "/contribuinte/motivoNC/{id}"
 @using Operacao.Shared.Models;
 @using Operacao.Shared.Utils;
-@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
@@ -56,7 +56,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        usuario = await localStorage.GetItemAsync<Funcionario>("usuario");
         motivos = await Http.GetFromJsonAsync<List<Operacao.Shared.Models.MotivoNC>>("api/motivoNC/");
     }
 

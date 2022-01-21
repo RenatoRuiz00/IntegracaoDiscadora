@@ -4,7 +4,7 @@
 @using Operacao.Shared.Utils;
 @inject HttpClient Http
 @inject NavigationManager NavManager
-@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject IJSRuntime JsRuntime
 
 @if (!string.IsNullOrEmpty(message))
@@ -179,7 +179,8 @@ else
 
     protected override async Task OnInitializedAsync()
     {
-        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        //usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        usuario = await localStorage.GetItemAsync<Funcionario>("usuario");
 
         bairros = await Http.GetFromJsonAsync<List<string>>("api/endereco/bairros");
         cidades = await Http.GetFromJsonAsync<List<string>>("api/endereco/cidades");

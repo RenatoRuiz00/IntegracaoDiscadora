@@ -1,7 +1,7 @@
 ﻿@page "/contribuinte/agenda/{id}/{telefone}"
 @using Operacao.Shared.Models;
 @using Operacao.Shared.Utils;
-@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @inject HttpClient Http
 @inject NavigationManager NavManager
 
@@ -81,12 +81,13 @@
 
     private Funcionario usuario;
     private int idTurno;
-    private int idFuncionario;
+    //private int idFuncionario;
 
 
-    protected override void OnInitialized()
+    protected override async Task OnInitializedAsync()
     {
-        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        //usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        usuario = await localStorage.GetItemAsync<Funcionario>("usuario");
     }
 
     private async Task Submit()

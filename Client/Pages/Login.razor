@@ -2,7 +2,7 @@
 @using Operacao.Shared.Models
 @inject HttpClient Http
 @inject NavigationManager NavManager
-@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @layout EmptyLayout
 
 <style>
@@ -138,7 +138,9 @@
 
         if (funcionario != null && funcionario.Id != 0)
         {
-            sessionStorage.SetItem<Funcionario>("usuario", funcionario);
+            await localStorage.SetItemAsync<Funcionario>("usuario", funcionario);
+
+            //sessionStorage.SetItem<Funcionario>("usuario", funcionario);
             NavManager.NavigateTo("/index");
         }
         else

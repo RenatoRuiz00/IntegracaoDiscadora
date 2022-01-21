@@ -5,8 +5,7 @@
 @using Operacao.Shared.Models.PagSeguro
 @inject HttpClient Http
 @inject NavigationManager NavManager
-@inject Blazored.SessionStorage.ISyncSessionStorageService sessionStorage
-@using System.Text.Json.Serialization;
+@inject Blazored.LocalStorage.ILocalStorageService localStorage
 @using System.Text.Json;
 
 <h3>Lançar Doação</h3>
@@ -104,7 +103,7 @@
 
     protected override async Task OnInitializedAsync()
     {
-        usuario = sessionStorage.GetItem<Funcionario>("usuario");
+        usuario = await localStorage.GetItemAsync<Funcionario>("usuario");
 
         if (usuario == null || usuario.Id == 0)
         {
@@ -116,8 +115,8 @@
             await BuscarCredenciaisBoleto();
         }
 
-        parcela.DtVencimento = Converter.TimeZone(DateTime.UtcNow); Alterações tela contribuinte
-         categorias = await Http.GetFromJsonAsync<List<Categoria>>("api/categoria/");
+        parcela.DtVencimento = Converter.TimeZone(DateTime.UtcNow);
+        categorias = await Http.GetFromJsonAsync<List<Categoria>>("api/categoria/");
         doadNovo = await Http.GetFromJsonAsync<DoadNovo>("api/doadnovo/buscarporid2/" + Id);
     }
 
@@ -170,7 +169,8 @@
 
     private async Task InserirAcaoContribuinte()
     {
-        AcaoContribuinte acao = new AcaoContribuinte {
+        AcaoContribuinte acao = new AcaoContribuinte
+        {
             FuncionarioId = usuario.Id,
             Valor = parcela.Valor,
             Identificacao = 1,
